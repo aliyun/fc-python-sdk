@@ -179,7 +179,7 @@ class TestFunction(unittest.TestCase):
             self.serviceName, helloWorld,
             handler='main.my_handler', runtime='python2.7', codeZipFile='hello_world/hello_world.zip')
         r = self.client.invoke_function(self.serviceName, helloWorld)
-        self.assertEqual(r.text, 'hello world')
+        self.assertEqual(str(r), 'hello world')
 
         # read a image as invoke parameter.
         imageProcess = 'test_invoke_hello_world_' + ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
@@ -190,7 +190,7 @@ class TestFunction(unittest.TestCase):
         sourceImage = open('image_process/data/serverless.png', 'rb')
         destImage = open('/tmp/serverless.png', 'wb')
         r = self.client.invoke_function(self.serviceName, imageProcess, payload=sourceImage)
-        destImage.write(r.content)
+        destImage.write(r)
         sourceImage.close()
         destImage.close()
 

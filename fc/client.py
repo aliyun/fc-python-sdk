@@ -12,6 +12,7 @@ from . import auth
 from . import util
 import platform
 
+
 class Client(object):
     def __init__(self, **kwargs):
         endpoint = kwargs.get('endpoint', None)
@@ -36,7 +37,7 @@ class Client(object):
 
     @staticmethod
     def _normalize_endpoint(url):
-        if not url.startswith('http://') and not url.startwith('https://'):
+        if not url.startswith('http://') and not url.startswith('https://'):
             return 'https://{0}'.format(url)
         return url.strip()
 
@@ -550,7 +551,37 @@ class Client(object):
 
         return self._do_request(method, path, headers, params=params).json()
 
-    def invoke_function(self, serviceName, functionName,
+    def invoke_function(self, serviceName, functionName, payload=None, logType='None', traceId=None):
+        """
+        Invoke the function synchronously.
+        :param serviceName: (required, string) the name of the service.
+        :param functionName: (required, string) the name of the function.
+        :param payload: (optional, bytes or seekable file-like object): the input of the function.
+        Invoke the function synchronously or asynchronously.
+        :param logType: (optional, string) 'None' or 'Tail'. When invoke a function synchronously,
+        you can set the log type to 'Tail' to get the last 4KB base64-encoded function log.
+        :param traceId: (optional, string) a uuid to do the request tracing.
+        :return: function output bytes.
+        """
+        return self._invoke_function(
+            serviceName, functionName, payload=payload, invocationType='Sync', logType=logType, traceId=traceId)
+
+    def async_invoke_function(self, serviceName, functionName, payload=None, logType='None', traceId=None):
+        """
+        Invoke the function asynchronously.
+        :param serviceName: (required, string) the name of the service.
+        :param functionName: (required, string) the name of the function.
+        :param payload: (optional, bytes or seekable file-like object): the input of the function.
+        Invoke the function synchronously or asynchronously.
+        :param logType: (optional, string) 'None' or 'Tail'. When invoke a function synchronously,
+        you can set the log type to 'Tail' to get the last 4KB base64-encoded function log.
+        :param traceId: (optional, string) a uuid to do the request tracing.
+        :return: function output bytes.
+        """
+        return self._invoke_function(
+            serviceName, functionName, payload=payload, invocationType='Async', logType=logType, traceId=traceId)
+
+    def _invoke_function(self, serviceName, functionName,
                         payload=None, invocationType='Sync', logType='None', traceId=None):
         """
         Invoke the function.
@@ -589,4 +620,4 @@ class Client(object):
             logging.error(errmsg)
             raise requests.HTTPError(errmsg, r)
 
-        return r
+        return r.content
