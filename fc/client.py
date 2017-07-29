@@ -10,24 +10,27 @@ import json
 from . import __version__
 from . import auth
 from . import util
-
+import platform
 
 class Client(object):
     def __init__(self, **kwargs):
-        endpoint = kwargs.get('Endpoint', None)
+        endpoint = kwargs.get('endpoint', None)
         if not endpoint:
             raise ValueError('A valid Endpoint parameter must be specified to construct the Client object.')
-        access_key_id = kwargs.get("AccessKeyID", None)
+        access_key_id = kwargs.get("accessKeyID", None)
         if not access_key_id:
             raise ValueError('A valid AccessKeyID parameter must be specified to construct the Client object.')
-        access_key_secret = kwargs.get('AccessKeySecret', None)
+        access_key_secret = kwargs.get('accessKeySecret', None)
         if not access_key_secret:
             raise ValueError('A valid AccessKeySecret parameter must be specified to construct the Client object.')
-        security_token = kwargs.get('SecurityToken', '')
+        security_token = kwargs.get('securityToken', '')
         self.endpoint = Client._normalize_endpoint(endpoint)
         self.host = Client._get_host(endpoint)
         self.api_version = '2016-08-15'
-        self.user_agent = 'aliyun-fc-python-sdk-v{0}'.format(__version__)
+        self.user_agent = \
+            'aliyun-fc-sdk-v{0}.python-{1}.{2}-{3}-{4}'.\
+            format(__version__, platform.python_version(),
+                   platform.system(), platform.release(), platform.machine())
         self.auth = auth.Auth(access_key_id, access_key_secret, security_token)
         self.timeout = kwargs.get('Timeout', 60)
 
@@ -68,12 +71,16 @@ class Client(object):
                 'Http status code: {0}. Method: {1}. URL: {2}. Headers: {3}'.format(
                     r.status_code, method, url, r.headers))
         elif 400 <= r.status_code < 500:
-            errmsg = 'Client error: {0}. Message: {1}. Method: {2}. URL: {3}. Headers: {4}'.format(
-                r.status_code, r.json(), method, url, r.headers)
+            errmsg = \
+                'Client error: {0}. Message: {1}. Method: {2}. URL: {3}. Request headers: {4}. Response headers: {5}'.\
+                format(r.status_code, r.json(), method, url, headers, r.headers)
+            logging.error(errmsg)
             raise requests.HTTPError(errmsg, r)
         elif 500 <= r.status_code < 600:
-            errmsg = 'Server error: {0}. Message: {1}. Method: {2}. URL: {3}. Headers: {4}'.format(
-                r.status_code, r.json(), method, url, r.headers)
+            errmsg = \
+                'Server error: {0}. Message: {1}. Method: {2}. URL: {3}. Request headers: {4}. Response headers: {5}'. \
+                format(r.status_code, r.json(), method, url, headers, r.headers)
+            logging.error(errmsg)
             raise requests.HTTPError(errmsg, r)
 
         return r
@@ -244,8 +251,8 @@ class Client(object):
                     'role': 'string',
                     'serviceId': 'string',
                     'serviceName': 'string',
-                    },
-                    ...
+                },
+                ...
             ],
             'nextToken': 'string'
         }
@@ -323,7 +330,7 @@ class Client(object):
             payload['code'] = {'zipFile': encoded}
         elif codeDir:
             bytesIO = io.BytesIO()
-            util.ZipDir(codeDir, bytesIO)
+            util.zip_dir(codeDir, bytesIO)
             encoded = base64.b64encode(bytesIO.getvalue())
             payload['code'] = {'zipFile': encoded}
         else:
@@ -407,7 +414,7 @@ class Client(object):
             util.ZipDir(codeDir, bytesIO)
             encoded = base64.b64encode(bytesIO.getvalue())
             payload['code'] = {'zipFile': encoded}
-        else:
+        elif codeOSSBucket and codeOSSObject:
             payload['code'] = {'ossBucketName': codeOSSBucket, 'ossObjectName': codeOSSObject}
 
         if description:
@@ -426,14 +433,15 @@ class Client(object):
 
     def delete_function(self, serviceName, functionName, etag=None, traceId=None):
         """
-        Delete the specified service.
+        Delete the specified function.
         :param serviceName: name of the service.
+        :param serviceName: name of the function.
         :param etag: (optional, string) delete the service only when matched the given etag.
         :param traceId: (optional, string) a uuid to do the request tracing.
         :return: None
         """
         method = 'DELETE'
-        path = '/{0}/services/{1}'.format(self.api_version, serviceName)
+        path = '/{0}/services/{1}/functions/{2}'.format(self.api_version, serviceName, functionName)
         headers = self._build_common_headers()
         if etag:
             headers['if-match'] = etag
@@ -445,27 +453,122 @@ class Client(object):
 
         self._do_request(method, path, headers)
 
-    def invoke_function(self, service_name, function_name,
-                        payload=None, invocation_type='Sync', log_type='None', trace_id=None):
+    def get_function(self, serviceName, functionName, traceId=None):
         """
-        Invoke the function.
-        :param service_name: the name of the service.
-        :param function_name: the name of the function.
-        :param payload: (optional, bytes or seekable file-like object): the input of the function.
-        :param invocation_type: (optional, string) 'Sync' or 'Async'.
-        Invoke the function synchronously or asynchronously.
-        :param log_type: (optional, string) 'None' or 'Tail'. When invoke a function synchronously,
-        you can set the log type to 'Tail' to get the last 4KB base64-encoded function log.
-        :param trace_id: (optional, string) a uuid to do the request tracing.
-        :return a dict that contains following fields.
+        Get the function configuration.
+        :param serviceName: (required, string) name of the service.
+        :param functionName: (required, string) name of the function.
+        :param traceId: (optional, string) trace id of the request.
+        :return: function configuration.
+        :rtype: dict
+        """
+        method = 'GET'
+        path = '/{0}/services/{1}/functions/{2}'.format(self.api_version, serviceName, functionName)
+        headers = self._build_common_headers()
+        if traceId:
+            headers['x-fc-trace-id'] = traceId
+
+        # Sign the request and set the signature to headers.
+        headers['authorization'] = self.auth.sign_request(method, path, headers)
+
+        r = self._do_request(method, path, headers)
+        dict = r.json()
+        dict['etag'] = r.headers['etag']
+        return dict
+
+    def get_function_code(self, serviceName, functionName, traceId=None):
+        """
+        Get the function code.
+        :param serviceName: (required, string) name of the service.
+        :param functionName: (required, string) name of the function.
+        :param traceId: (optional, string) trace id of the request.
+        :return: dict, including function code information.
         {
+            'checksum': 'string',  // CRC64 checksum
+            'url': 'string',       // a download url of the code package
         }
         """
-        method = 'POST'
-        path = '/{0}/services/{1}/functions/{2}/invocations'.format(self.api_version, service_name, function_name)
+        method = 'GET'
+        path = '/{0}/services/{1}/functions/{2}/code'.format(self.api_version, serviceName, functionName)
         headers = self._build_common_headers()
-        headers['x-fc-invocation-type'] = invocation_type
-        headers['x-fc-log-type'] = log_type
+        if traceId:
+            headers['x-fc-trace-id'] = traceId
+
+        # Sign the request and set the signature to headers.
+        headers['authorization'] = self.auth.sign_request(method, path, headers)
+
+        return self._do_request(method, path, headers).json()
+
+    def list_functions(self, serviceName, limit=None, nextToken=None, prefix=None, startKey=None, traceId=None):
+        """
+        List the functions of the specified service.
+        :param limit: (optional, integer) the total number of the returned services.
+        :param nextToken: (optional, string) continue listing the service from the previous point.
+        :param prefix: (optional, string) list the services with the given prefix.
+        :param startKey: (optional, string) startKey is where you want to start listing from.
+        :param traceId: (optional, string) trace id of the request.
+        :return: dict, including all function information.
+        {
+            'functions':
+            [
+                {
+                    'codeChecksum': 'string',     // CRC64 checksum
+                    'codeSize': 1024,             // in byte
+                    'createdTime': 'string',
+                    'description': 'string',
+                    'functionId': 'string',
+                    'functionName': 'string',
+                    'handler': 'string',
+                    'lastModifiedTime': 'string',
+                    'memorySize': 512,            // in MB
+                    'runtime': 'string',
+                    'timeout': 60,                // in second
+                },
+                ...
+            ],
+            'nextToken': 'string'
+        }
+        """
+        method = 'GET'
+        path = '/{0}/services/{1}/functions'.format(self.api_version, serviceName)
+        headers = self._build_common_headers()
+        if traceId:
+            headers['x-fc-trace-id'] = traceId
+
+        # Sign the request and set the signature to headers.
+        headers['authorization'] = self.auth.sign_request(method, path, headers)
+
+        params = {}
+        if limit:
+            params['limit'] = limit
+        if prefix:
+            params['prefix'] = prefix
+        if nextToken:
+            params['nextToken'] = nextToken
+        if startKey:
+            params['startKey'] = startKey
+
+        return self._do_request(method, path, headers, params=params).json()
+
+    def invoke_function(self, serviceName, functionName,
+                        payload=None, invocationType='Sync', logType='None', traceId=None):
+        """
+        Invoke the function.
+        :param serviceName: (required, string) the name of the service.
+        :param functionName: (required, string) the name of the function.
+        :param payload: (optional, bytes or seekable file-like object): the input of the function.
+        :param invocationType: (optional, string) 'Sync' or 'Async'.
+        Invoke the function synchronously or asynchronously.
+        :param logType: (optional, string) 'None' or 'Tail'. When invoke a function synchronously,
+        you can set the log type to 'Tail' to get the last 4KB base64-encoded function log.
+        :param traceId: (optional, string) a uuid to do the request tracing.
+        :return: function output bytes.
+        """
+        method = 'POST'
+        path = '/{0}/services/{1}/functions/{2}/invocations'.format(self.api_version, serviceName, functionName)
+        headers = self._build_common_headers()
+        headers['x-fc-invocation-type'] = invocationType
+        headers['x-fc-log-type'] = logType
         headers['content-type'] = 'application/octet-stream'
         if isinstance(payload, file):
             payload.seek(0, os.SEEK_END)
@@ -473,10 +576,17 @@ class Client(object):
             payload.seek(0, os.SEEK_SET)
         elif isinstance(payload, bytes):
             headers['content-length'] = len(payload)
-        if trace_id:
-            headers['x-fc-trace-id'] = trace_id
+        if traceId:
+            headers['x-fc-trace-id'] = traceId
 
         # Sign the request and set the signature to headers.
         headers['authorization'] = self.auth.sign_request(method, path, headers)
 
-        return self._do_request(method, path, headers, body=payload)
+        r = self._do_request(method, path, headers, body=payload)
+        if r.headers.get('x-fc-error-type', ''):
+            errmsg = 'Function execution error: {0}. Path: {1}. Headers: {2}'.format(
+                r.json(), path, r.headers)
+            logging.error(errmsg)
+            raise requests.HTTPError(errmsg, r)
+
+        return r

@@ -7,22 +7,20 @@ import requests
 import string
 import unittest
 import uuid
+import os
 
 
 class TestService(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super(TestService, self).__init__(*args, **kwargs)
-        self.access_key_id = ''
-        self.access_key_secret = ''
         self.client = fc.Client(
-            #Endpoint='http://43716.fc.cn-hangzhou.aliyuncs.com:8080',
-            Endpoint='http://43716.fc.cn-shanghai.aliyuncs.com',
-            AccessKeyID='LTAIJ4gv93WLYyA4',
-            AccessKeySecret='xYv3JoZ8jeFmRIVzIiRUghEwVHnVdQ'
+            endpoint=os.environ['ENDPOINT'],
+            accessKeyID=os.environ['ACCESS_KEY_ID'],
+            accessKeySecret=os.environ['ACCESS_KEY_SECRET'],
         )
 
     def test_create(self):
-        name = 'test_create' + ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
+        name = 'test_create_' + ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
         desc = u'这是测试service'
         logging.info('Create service: {0}'.format(name))
         service = self.client.create_service(name, description=desc)
@@ -49,7 +47,7 @@ class TestService(unittest.TestCase):
         # TODO: test create with logConfig and role.
 
     def test_update(self):
-        name = 'test_update' + ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
+        name = 'test_update_' + ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
         logging.info('Create service: {0}'.format(name))
         self.client.create_service(name)
 
