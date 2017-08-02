@@ -42,7 +42,7 @@ Getting started
     # https://help.aliyun.com/document_detail/52984.html
     client = fc.Client(
         endpoint='<Your Endpoint>',
-        accessKeyId='<Your AccessKeyID>',
+        accessKeyID='<Your AccessKeyID>',
         accessKeySecret='<Your AccessKeySecret>')
 
     # Create service.
