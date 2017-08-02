@@ -102,12 +102,12 @@ Run the test in the following method:
 
 More resources
 --------------
-- `Aliyun FunctionCompute docs <https://help.aliyun.com/product/50980.html>`_.
+- `Aliyun FunctionCompute docs <https://help.aliyun.com/product/50980.html>`_
 
 Contacting us
 -------------
-- `Links <https://help.aliyun.com/document_detail/53087.html>`_.
+- `Links <https://help.aliyun.com/document_detail/53087.html>`_
 
 License
 -------
-- `MIT`
+- `MIT <https://github.com/aliyun/fc-python-sdk/blob/master/LICENSE>`_
