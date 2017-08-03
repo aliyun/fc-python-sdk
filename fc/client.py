@@ -600,13 +600,6 @@ class Client(object):
         headers = self._build_common_headers()
         headers['x-fc-invocation-type'] = invocationType
         headers['x-fc-log-type'] = logType
-        headers['content-type'] = 'application/octet-stream'
-        if isinstance(payload, file):
-            payload.seek(0, os.SEEK_END)
-            headers['content-length'] = payload.tell()
-            payload.seek(0, os.SEEK_SET)
-        elif isinstance(payload, bytes):
-            headers['content-length'] = len(payload)
         if traceId:
             headers['x-fc-trace-id'] = traceId
 

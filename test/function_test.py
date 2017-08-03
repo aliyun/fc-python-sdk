@@ -30,7 +30,7 @@ class TestFunction(unittest.TestCase):
         logging.info('Create function: {0}'.format(functionName))
         function = self.client.create_function(
             self.serviceName, functionName,
-            handler='main.my_handler', runtime='python2.7', codeDir='hello_world', description=desc)
+            handler='main.my_handler', runtime='python2.7', codeDir='test/hello_world', description=desc)
         self.assertEqual(function['functionName'], functionName)
         self.assertEqual(function['runtime'], 'python2.7')
         self.assertEqual(function['handler'], 'main.my_handler')
@@ -73,7 +73,7 @@ class TestFunction(unittest.TestCase):
         logging.info('Create function: {0}'.format(functionName))
         self.client.create_function(
             self.serviceName, functionName,
-            handler='main.my_handler', runtime='python2.7', codeDir='hello_world')
+            handler='main.my_handler', runtime='python2.7', codeDir='test/hello_world')
 
         desc = 'function description'
         func = self.client.update_function(self.serviceName, functionName, description=desc)
@@ -118,22 +118,22 @@ class TestFunction(unittest.TestCase):
 
         self.client.create_function(
             self.serviceName, prefix + 'abc',
-            handler='main.my_handler', runtime='python2.7', codeZipFile='hello_world/hello_world.zip')
+            handler='main.my_handler', runtime='python2.7', codeZipFile='test/hello_world/hello_world.zip')
         self.client.create_function(
             self.serviceName, prefix + 'abd',
-            handler='main.my_handler', runtime='python2.7', codeZipFile='hello_world/hello_world.zip')
+            handler='main.my_handler', runtime='python2.7', codeZipFile='test/hello_world/hello_world.zip')
         self.client.create_function(
             self.serviceName, prefix + 'ade',
-            handler='main.my_handler', runtime='python2.7', codeZipFile='hello_world/hello_world.zip')
+            handler='main.my_handler', runtime='python2.7', codeZipFile='test/hello_world/hello_world.zip')
         self.client.create_function(
             self.serviceName, prefix + 'bcd',
-            handler='main.my_handler', runtime='python2.7', codeZipFile='hello_world/hello_world.zip')
+            handler='main.my_handler', runtime='python2.7', codeZipFile='test/hello_world/hello_world.zip')
         self.client.create_function(
             self.serviceName, prefix + 'bde',
-            handler='main.my_handler', runtime='python2.7', codeZipFile='hello_world/hello_world.zip')
+            handler='main.my_handler', runtime='python2.7', codeZipFile='test/hello_world/hello_world.zip')
         self.client.create_function(
             self.serviceName, prefix + 'zzz',
-            handler='main.my_handler', runtime='python2.7', codeZipFile='hello_world/hello_world.zip')
+            handler='main.my_handler', runtime='python2.7', codeZipFile='test/hello_world/hello_world.zip')
 
         r = self.client.list_functions(self.serviceName, limit=2, startKey=prefix + 'b')
         functions = r['functions']
@@ -177,7 +177,7 @@ class TestFunction(unittest.TestCase):
         logging.info('create function: {0}'.format(helloWorld))
         self.client.create_function(
             self.serviceName, helloWorld,
-            handler='main.my_handler', runtime='python2.7', codeZipFile='hello_world/hello_world.zip')
+            handler='main.my_handler', runtime='python2.7', codeZipFile='test/hello_world/hello_world.zip')
         r = self.client.invoke_function(self.serviceName, helloWorld)
         self.assertEqual(str(r), 'hello world')
 
@@ -186,8 +186,8 @@ class TestFunction(unittest.TestCase):
         logging.info('create function: {0}'.format(imageProcess))
         self.client.create_function(
             self.serviceName, imageProcess,
-            handler='image_process.resize', runtime='nodejs4.4', codeDir='image_process/code')
-        sourceImage = open('image_process/data/serverless.png', 'rb')
+            handler='image_process.resize', runtime='nodejs4.4', codeDir='test/image_process/code')
+        sourceImage = open('test/image_process/data/serverless.png', 'rb')
         destImage = open('/tmp/serverless.png', 'wb')
         r = self.client.invoke_function(self.serviceName, imageProcess, payload=sourceImage)
         destImage.write(r)
