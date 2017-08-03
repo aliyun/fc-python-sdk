@@ -6,7 +6,7 @@ https://www.aliyun.com/product/fc
 """
 
 __author__ = 'Aliyun Function Compute'
-__version__ = '0.1'
+__version__ = '0.2'
 
 from .client import Client
 
