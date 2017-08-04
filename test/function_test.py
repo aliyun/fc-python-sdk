@@ -179,7 +179,7 @@ class TestFunction(unittest.TestCase):
             self.serviceName, helloWorld,
             handler='main.my_handler', runtime='python2.7', codeZipFile='test/hello_world/hello_world.zip')
         r = self.client.invoke_function(self.serviceName, helloWorld)
-        self.assertEqual(str(r), 'hello world')
+        self.assertEqual(r.decode('utf-8'), 'hello world')
 
         # read a image as invoke parameter.
         imageProcess = 'test_invoke_hello_world_' + ''.join(random.choice(string.ascii_lowercase) for _ in range(8))

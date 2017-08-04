@@ -5,7 +5,6 @@ import requests
 import logging
 import email
 import io
-import os
 import json
 from . import __version__
 from . import auth
@@ -130,7 +129,7 @@ class Client(object):
         if role:
             payload['role'] = role
 
-        r = self._do_request(method, path, headers, body=bytes(json.dumps(payload)))
+        r = self._do_request(method, path, headers, body=json.dumps(payload).encode('utf-8'))
         dict = r.json()
         dict['etag'] = r.headers['etag']
         return dict
@@ -205,7 +204,7 @@ class Client(object):
         if role:
             payload['role'] = role
 
-        r = self._do_request(method, path, headers, body=bytes(json.dumps(payload)))
+        r = self._do_request(method, path, headers, body=json.dumps(payload).encode('utf-8'))
         dict = r.json()
         dict['etag'] = r.headers['etag']
         return dict
@@ -327,12 +326,12 @@ class Client(object):
             # codeZipFile has highest priority.
             file = open(codeZipFile, 'rb')
             data = file.read()
-            encoded = base64.b64encode(data)
+            encoded = base64.b64encode(data).decode('utf-8')
             payload['code'] = {'zipFile': encoded}
         elif codeDir:
             bytesIO = io.BytesIO()
             util.zip_dir(codeDir, bytesIO)
-            encoded = base64.b64encode(bytesIO.getvalue())
+            encoded = base64.b64encode(bytesIO.getvalue()).decode('utf-8')
             payload['code'] = {'zipFile': encoded}
         else:
             payload['code'] = {'ossBucketName': codeOSSBucket, 'ossObjectName': codeOSSObject}
@@ -346,7 +345,7 @@ class Client(object):
         if timeout:
             payload['timeout'] = timeout
 
-        r = self._do_request(method, path, headers, body=bytes(json.dumps(payload)))
+        r = self._do_request(method, path, headers, body=json.dumps(payload).encode('utf-8'))
         dict = r.json()
         dict['etag'] = r.headers['etag']
         return dict
@@ -427,7 +426,7 @@ class Client(object):
         if timeout:
             payload['timeout'] = timeout
 
-        r = self._do_request(method, path, headers, body=bytes(json.dumps(payload)))
+        r = self._do_request(method, path, headers, body=json.dumps(payload).encode('utf-8'))
         dict = r.json()
         dict['etag'] = r.headers['etag']
         return dict

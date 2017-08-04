@@ -31,8 +31,8 @@ class Auth(object):
         canonical_resource = path
         string_to_sign = '\n'.join(
             [method.upper(), content_md5, content_type, date, canonical_headers + canonical_resource])
-        h = hmac.new(self.secret, string_to_sign, hashlib.sha256)
-        signature = 'FC ' + self.id + ':' + base64.b64encode(h.digest())
+        h = hmac.new(self.secret.encode('utf-8'), string_to_sign.encode('utf-8'), hashlib.sha256)
+        signature = 'FC ' + self.id + ':' + base64.b64encode(h.digest()).decode('utf-8')
         return signature
 
     @staticmethod

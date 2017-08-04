@@ -35,7 +35,7 @@ def zip_dir(inputDir, output):
                     zipInfo.create_system = 3
                     # long type of hex val of '0xA1ED0000L',
                     # say, symlink attr magic...
-                    zipInfo.external_attr = 2716663808L
+                    zipInfo.external_attr = 2716663808
                     zipOut.writestr(zipInfo, os.readlink(fullPath))
                 else:
                     #print('faint {0} {1} {2}'.format(rootLen, fullPath, archiveRoot))
