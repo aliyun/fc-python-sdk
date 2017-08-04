@@ -1,8 +1,15 @@
+Aliyun FunctionCompute Python SDK
+=================================
+
+.. image:: https://badge.fury.io/py/aliyun-fc.svg
+    :target: https://badge.fury.io/py/aliyun-fc
+.. image:: https://travis-ci.org/aliyun/fc-python-sdk.svg?branch=master
+    :target: https://travis-ci.org/aliyun/fc-python-sdk
+.. image:: https://coveralls.io/repos/github/aliyun/fc-python-sdk/badge.svg?branch=master
+    :target: https://coveralls.io/github/aliyun/fc-python-sdk?branch=master
+
 Overview
 --------
-
-Aliyun FunctionCompute Python SDK.
-
 
 The SDK of this version is dependent on the third-party HTTP library `requests <https://github.com/kennethreitz/requests>`_.
 
