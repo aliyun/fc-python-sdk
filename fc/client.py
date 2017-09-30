@@ -59,6 +59,9 @@ class Client(object):
             'content-length': '0',
             'user-agent': self.user_agent,
         }
+        if self.auth.security_token != '':
+            headers['x-fc-security-token'] = self.auth.security_token
+
         return headers
 
     def _do_request(self, method, path, headers, params=None, body=None):
