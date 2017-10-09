@@ -6,6 +6,7 @@ python:
 
 install:
   -  pip install requests nose nose-cov python-coveralls
+  -  pip install aliyun-python-sdk-sts
 
 script:
   - nosetests test/ --with-cov

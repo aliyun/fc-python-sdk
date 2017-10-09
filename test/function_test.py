@@ -9,7 +9,9 @@ import unittest
 import uuid
 import imghdr
 import os
-
+import json
+from aliyunsdkcore import client as AliyunSDK
+from aliyunsdksts.request.v20150401 import AssumeRoleRequest
 
 class TestFunction(unittest.TestCase):
     def __init__(self, *args, **kwargs):
@@ -199,7 +201,31 @@ class TestFunction(unittest.TestCase):
         self.client.delete_function(self.serviceName, helloWorld)
         self.client.delete_function(self.serviceName, imageProcess)
 
+    def test_sts(self):
+        helloWorld= 'test_invoke_hello_world_' + ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
+        logging.info('create function: {0}'.format(helloWorld))
+        self.client.create_function(
+            self.serviceName, helloWorld,
+            handler='main.my_handler', runtime='python2.7', codeZipFile='test/hello_world/hello_world.zip')
+
+        sts_client = AliyunSDK.AcsClient(
+            os.environ['ACCESS_KEY_ID'],
+            os.environ['ACCESS_KEY_SECRET'],
+            'cn-shanghai')
+        request = AssumeRoleRequest.AssumeRoleRequest()
+        request.set_RoleArn(os.environ['STS_ROLE'])
+        request.set_RoleSessionName('fc-python-sdk')
+        response = sts_client.do_action_with_exception(request)
+        resp = json.loads(response)
+        client = fc.Client(
+            endpoint=os.environ['ENDPOINT'],
+            accessKeyID=resp['Credentials']['AccessKeyId'],
+            accessKeySecret=resp['Credentials']['AccessKeySecret'],
+            securityToken=resp['Credentials']['SecurityToken'],
+        )
+        r = client.invoke_function(self.serviceName, helloWorld)
+        self.assertEqual(r.decode('utf-8'), 'hello world')
+
 
 if __name__ == '__main__':
     unittest.main()
-
