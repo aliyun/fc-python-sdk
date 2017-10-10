@@ -59,13 +59,13 @@ class TestFunction(unittest.TestCase):
         self.assertTrue(code['url'] != '')
 
         # expect the delete function  failed because of invalid etag.
-        with self.assertRaises(requests.HTTPError):
+        with self.assertRaises(fc.FcError):
             self.client.delete_function(self.serviceName, functionName, etag='invalid etag')
         # now success with valid etag.
         self.client.delete_function(self.serviceName, functionName, etag=etag)
 
         # can not get the deleted function.
-        with self.assertRaises(requests.HTTPError):
+        with self.assertRaises(fc.FcError):
             self.client.get_function(self.serviceName, functionName)
 
         # TODO: test create with oss object code.
@@ -83,7 +83,7 @@ class TestFunction(unittest.TestCase):
         etag = func['etag']
 
         # expect the delete service failed because of invalid etag.
-        with self.assertRaises(requests.HTTPError):
+        with self.assertRaises(fc.FcError):
             self.client.update_function(self.serviceName, functionName, description='invalid', etag='invalid etag')
         self.assertEqual(func['description'], desc)
 
