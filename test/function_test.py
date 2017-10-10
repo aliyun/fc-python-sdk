@@ -226,6 +226,18 @@ class TestFunction(unittest.TestCase):
         r = client.invoke_function(self.serviceName, helloWorld)
         self.assertEqual(r.decode('utf-8'), 'hello world')
 
+    def test_fc_error_code(self):
+        helloWorld= 'test_invoke_hello_world_' + ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
+        logging.info('create function: {0}'.format(helloWorld))
+        self.client.create_function(
+            self.serviceName, helloWorld,
+            handler='main.my_handler', runtime='python2.7', codeZipFile='test/hello_world/hello_world.zip')
+
+        try:
+            r = self.client.invoke_function(self.serviceName, "undefine_function")
+        except Exception as e: 
+            self.assertEqual(e.__class__.__name__ , 'FunctionNotFound')
+
 
 if __name__ == '__main__':
     unittest.main()
