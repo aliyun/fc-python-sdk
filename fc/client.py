@@ -79,21 +79,23 @@ class Client(object):
                 'Client error: {0}. Message: {1}. Method: {2}. URL: {3}. Request headers: {4}. Response headers: {5}'.\
                 format(r.status_code, r.json(), method, url, headers, r.headers)
             logging.error(errmsg)
-            err_d = r.json()
-            requests_info = dict(r.headers)
-            err_d['X-Fc-Request-Id'] = requests_info.get('X-Fc-Request-Id','unknown')
-            raise fc_exceptions.get_fc_error(err_d, r.status_code)
+            raise self.__gen_request_err_msg(r)
         elif 500 <= r.status_code < 600:
             errmsg = \
                 'Server error: {0}. Message: {1}. Method: {2}. URL: {3}. Request headers: {4}. Response headers: {5}'. \
                 format(r.status_code, r.json(), method, url, headers, r.headers)
             logging.error(errmsg)
-            err_d = r.json()
-            requests_info = dict(r.headers)
-            err_d['X-Fc-Request-Id'] = requests_info.get('X-Fc-Request-Id','unknown')
-            raise fc_exceptions.get_fc_error(err_d, r.status_code)
+            raise self.__gen_request_err_msg(r)
 
         return r
+
+    def __gen_request_err_msg(self, r):
+        err_d = r.json()
+        requests_info = dict(r.headers)
+        err_d['RequestId'] = requests_info.get('X-Fc-Request-Id','unknown')
+        err_code = err_d.get('ErrorCode', '')
+        err_msg = 'ErrorMessage:{0} . RequestId:{1}'.format(err_d.get('ErrorMessage',''), err_d['RequestId'])
+        return fc_exceptions.get_fc_error(err_msg, r.status_code, err_code)
 
     def create_service(self, serviceName, description=None, logConfig=None, role=None, traceId=None):
         """
