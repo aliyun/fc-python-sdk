@@ -8,9 +8,10 @@ class FcError(Exception):
 
 
 def get_fc_error(message, status):
-    err_code = message.get('ErrorCode')
-    if err_code:
-        ErrorClass = type(str(err_code), (FcError, ), {})
-        return ErrorClass(message, status)
+    if isinstance(message, dict):
+        err_code = message.get('ErrorCode')
+        if err_code:
+            ErrorClass = type(str(err_code), (FcError, ), {})
+            return ErrorClass(message, status)
 
     return FcError(message, status)
