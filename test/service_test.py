@@ -39,8 +39,11 @@ class TestService(unittest.TestCase):
         self.assertEqual(service['description'], desc)
 
         # expect the delete service failed because of invalid etag.
-        with self.assertRaises(requests.HTTPError):
+        try:
             self.client.delete_service(name, etag='invalid etag')
+        except Exception as e: 
+            self.assertEqual(e.__class__.__name__ ,'PreconditionFailed')
+
         # now success with valid etag.
         self.client.delete_service(name, etag=etag)
 
@@ -59,8 +62,11 @@ class TestService(unittest.TestCase):
         # TODO: test create with logConfig and role.
 
         # expect the delete service failed because of invalid etag.
-        with self.assertRaises(requests.HTTPError):
+        try:
             self.client.update_service(name, description='invalid', etag='invalid etag')
+        except Exception as e: 
+            self.assertEqual(e.__class__.__name__ ,'PreconditionFailed')
+
         self.assertEqual(service['description'], desc)
 
         self.client.delete_service(name)

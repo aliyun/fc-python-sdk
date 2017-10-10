@@ -79,13 +79,19 @@ class Client(object):
                 'Client error: {0}. Message: {1}. Method: {2}. URL: {3}. Request headers: {4}. Response headers: {5}'.\
                 format(r.status_code, r.json(), method, url, headers, r.headers)
             logging.error(errmsg)
-            raise get_fc_error(r.json(), r.status_code)
+            err_d = r.json()
+            requests_info = dict(r.headers)
+            err_d['X-Fc-Request-Id'] = requests_info.get('X-Fc-Request-Id','unknown')
+            raise get_fc_error(err_d, r.status_code)
         elif 500 <= r.status_code < 600:
             errmsg = \
                 'Server error: {0}. Message: {1}. Method: {2}. URL: {3}. Request headers: {4}. Response headers: {5}'. \
                 format(r.status_code, r.json(), method, url, headers, r.headers)
             logging.error(errmsg)
-            raise get_fc_error(r.json(), r.status_code)
+            err_d = r.json()
+            requests_info = dict(r.headers)
+            err_d['X-Fc-Request-Id'] = requests_info.get('X-Fc-Request-Id','unknown')
+            raise get_fc_error(err_d, r.status_code)
 
         return r
 
