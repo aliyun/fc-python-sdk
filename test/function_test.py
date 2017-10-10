@@ -59,14 +59,20 @@ class TestFunction(unittest.TestCase):
         self.assertTrue(code['url'] != '')
 
         # expect the delete function  failed because of invalid etag.
-        with self.assertRaises(requests.HTTPError):
+        try:
             self.client.delete_function(self.serviceName, functionName, etag='invalid etag')
+        except Exception as e: 
+            self.assertEqual(e.__class__.__name__ ,'PreconditionFailed')
+
+        
         # now success with valid etag.
         self.client.delete_function(self.serviceName, functionName, etag=etag)
 
         # can not get the deleted function.
-        with self.assertRaises(requests.HTTPError):
+        try:
             self.client.get_function(self.serviceName, functionName)
+        except Exception as e: 
+            self.assertEqual(e.__class__.__name__ ,'FunctionNotFound')
 
         # TODO: test create with oss object code.
 
@@ -83,8 +89,11 @@ class TestFunction(unittest.TestCase):
         etag = func['etag']
 
         # expect the delete service failed because of invalid etag.
-        with self.assertRaises(requests.HTTPError):
+        try:
             self.client.update_function(self.serviceName, functionName, description='invalid', etag='invalid etag')
+        except Exception as e: 
+            self.assertEqual(e.__class__.__name__ ,'PreconditionFailed')
+
         self.assertEqual(func['description'], desc)
 
         self.client.delete_function(self.serviceName, functionName)
@@ -225,6 +234,18 @@ class TestFunction(unittest.TestCase):
         )
         r = client.invoke_function(self.serviceName, helloWorld)
         self.assertEqual(r.decode('utf-8'), 'hello world')
+
+    def test_fc_error_code(self):
+        helloWorld= 'test_invoke_hello_world_' + ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
+        logging.info('create function: {0}'.format(helloWorld))
+        self.client.create_function(
+            self.serviceName, helloWorld,
+            handler='main.my_handler', runtime='python2.7', codeZipFile='test/hello_world/hello_world.zip')
+
+        try:
+            r = self.client.invoke_function(self.serviceName, "undefine_function")
+        except Exception as e: 
+            self.assertEqual(e.__class__.__name__ , 'FunctionNotFound')
 
 
 if __name__ == '__main__':

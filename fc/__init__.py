@@ -9,6 +9,7 @@ __author__ = 'Aliyun Function Compute'
 __version__ = '0.3'
 
 from .client import Client
+from .fc_exceptions import FcError
 
 # Set default logging handler to avoid "No handler found" warnings.
 import logging
