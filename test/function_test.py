@@ -72,7 +72,7 @@ class TestFunction(unittest.TestCase):
         try:
             self.client.get_function(self.serviceName, functionName)
         except Exception as e: 
-            self.assertEqual(e.__class__.__name__ ,'PreconditionFailed')
+            self.assertEqual(e.__class__.__name__ ,'FunctionNotFound')
 
         # TODO: test create with oss object code.
 
