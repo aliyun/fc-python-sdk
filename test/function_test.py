@@ -59,16 +59,20 @@ class TestFunction(unittest.TestCase):
         self.assertTrue(code['url'] != '')
 
         # expect the delete function  failed because of invalid etag.
-        ErrorClass = type('PreconditionFailed', (fc.FcError, ), {})
-        with self.assertRaises(ErrorClass):
+        try:
             self.client.delete_function(self.serviceName, functionName, etag='invalid etag')
+        except Exception as e: 
+            self.assertEqual(e.__class__.__name__ ,'PreconditionFailed')
+
+        
         # now success with valid etag.
         self.client.delete_function(self.serviceName, functionName, etag=etag)
 
         # can not get the deleted function.
-        ErrorClass = type('PreconditionFailed', (fc.FcError, ), {})
-        with self.assertRaises(fc.FcError):
+        try:
             self.client.get_function(self.serviceName, functionName)
+        except Exception as e: 
+            self.assertEqual(e.__class__.__name__ ,'PreconditionFailed')
 
         # TODO: test create with oss object code.
 
@@ -85,9 +89,11 @@ class TestFunction(unittest.TestCase):
         etag = func['etag']
 
         # expect the delete service failed because of invalid etag.
-        ErrorClass = type('PreconditionFailed', (fc.FcError, ), {})
-        with self.assertRaises(ErrorClass):
+        try:
             self.client.update_function(self.serviceName, functionName, description='invalid', etag='invalid etag')
+        except Exception as e: 
+            self.assertEqual(e.__class__.__name__ ,'PreconditionFailed')
+
         self.assertEqual(func['description'], desc)
 
         self.client.delete_function(self.serviceName, functionName)
