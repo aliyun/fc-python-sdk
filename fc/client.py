@@ -9,7 +9,7 @@ import json
 from . import __version__
 from . import auth
 from . import util
-from fc_exceptions import get_fc_error
+from . import fc_exceptions 
 import platform
 
 
@@ -82,7 +82,7 @@ class Client(object):
             err_d = r.json()
             requests_info = dict(r.headers)
             err_d['X-Fc-Request-Id'] = requests_info.get('X-Fc-Request-Id','unknown')
-            raise get_fc_error(err_d, r.status_code)
+            raise fc_exceptions.get_fc_error(err_d, r.status_code)
         elif 500 <= r.status_code < 600:
             errmsg = \
                 'Server error: {0}. Message: {1}. Method: {2}. URL: {3}. Request headers: {4}. Response headers: {5}'. \
@@ -91,7 +91,7 @@ class Client(object):
             err_d = r.json()
             requests_info = dict(r.headers)
             err_d['X-Fc-Request-Id'] = requests_info.get('X-Fc-Request-Id','unknown')
-            raise get_fc_error(err_d, r.status_code)
+            raise fc_exceptions.get_fc_error(err_d, r.status_code)
 
         return r
 
@@ -620,6 +620,6 @@ class Client(object):
             errmsg = 'Function execution error: {0}. Path: {1}. Headers: {2}'.format(
                 r.json(), path, r.headers)
             logging.error(errmsg)
-            raise get_fc_error(errmsg, r.status_code)
+            raise fc_exceptions.get_fc_error(errmsg, r.status_code)
 
         return r.content
