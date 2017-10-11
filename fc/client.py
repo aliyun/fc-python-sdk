@@ -91,11 +91,10 @@ class Client(object):
 
     def __gen_request_err_msg(self, r):
         err_d = r.json()
-        requests_info = dict(r.headers)
-        err_d['RequestId'] = requests_info.get('X-Fc-Request-Id','unknown')
+        err_d['RequestId'] = r.headers.get('X-Fc-Request-Id','unknown')
         err_code = err_d.get('ErrorCode', '')
         err_msg = 'ErrorMessage:{0} . RequestId:{1}'.format(err_d.get('ErrorMessage',''), err_d['RequestId'])
-        return fc_exceptions.get_fc_error(err_msg, r.status_code, err_code)
+        return fc_exceptions.get_fc_error(err_msg, r.status_code, err_code, err_d['RequestId'])
 
     def create_service(self, serviceName, description=None, logConfig=None, role=None, traceId=None):
         """
@@ -622,6 +621,6 @@ class Client(object):
             errmsg = 'Function execution error: {0}. Path: {1}. Headers: {2}'.format(
                 r.json(), path, r.headers)
             logging.error(errmsg)
-            raise fc_exceptions.get_fc_error(errmsg, r.status_code)
+            raise self.__gen_request_err_msg(r)
 
         return r.content
