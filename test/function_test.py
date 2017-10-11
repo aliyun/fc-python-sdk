@@ -233,6 +233,8 @@ class TestFunction(unittest.TestCase):
             self.client.invoke_function(self.serviceName, "undefine_function")
 
         self.assertIn('RequestId', cm.exception.message)
+        self.assertIn('ErrorCode', cm.exception.message)
+        self.assertIn('ErrorMessage', cm.exception.message)
 
 if __name__ == '__main__':
     unittest.main()
