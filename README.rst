@@ -101,6 +101,7 @@ Take the Linux system for example:
     $ export ENDPOINT=<endpoint>
     $ export ACCESS_KEY_ID=<AccessKeyId>
     $ export ACCESS_KEY_SECRET=<AccessKeySecret>
+    $ export STS_TOKEN=<roleARN>
 
 Run the test in the following method:
 
