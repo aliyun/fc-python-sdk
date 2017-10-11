@@ -93,7 +93,11 @@ class Client(object):
         err_d = r.json()
         err_d['RequestId'] = r.headers.get('X-Fc-Request-Id','unknown')
         err_code = err_d.get('ErrorCode', '')
-        err_msg = 'ErrorMessage:{0} . RequestId:{1}'.format(err_d.get('ErrorMessage',''), err_d['RequestId'])
+        err_msg = json.dumps({
+            'ErrorMessage' : err_d.get('ErrorMessage',''),
+            'RequestId' : err_d['RequestId'],
+            'ErrorCode':err_code,
+        })
         return fc_exceptions.get_fc_error(err_msg, r.status_code, err_code, err_d['RequestId'])
 
     def create_service(self, serviceName, description=None, logConfig=None, role=None, traceId=None):
