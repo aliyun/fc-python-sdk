@@ -1,16 +1,12 @@
 # -*- coding: utf-8 -*-
 
 class FcError(Exception):
-    def __init__(self, message, status):
-        super(Exception, self).__init__(message, status)
+    def __init__(self, message, status_code, err_code = '', request_id = ''):
+        super(FcError, self).__init__(message, status_code, err_code, request_id)
         self.message = message
-        self.status = status
+        self.status_code = status_code
+        self.err_code = err_code
+        self.request_id = request_id
 
-
-def get_fc_error(message, status):
-    err_code = message.get('ErrorCode')
-    if err_code:
-        ErrorClass = type(str(err_code), (FcError, ), {})
-        return ErrorClass(message, status)
-
-    return FcError(message, status)
+def get_fc_error(message, status, err_code = '', request_id = ''):
+    return FcError(message, status, err_code, request_id)
