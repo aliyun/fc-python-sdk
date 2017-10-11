@@ -236,5 +236,8 @@ class TestFunction(unittest.TestCase):
         self.assertIn('ErrorCode', cm.exception.message)
         self.assertIn('ErrorMessage', cm.exception.message)
 
+        self.assertEqual('FunctionNotFound', cm.exception.err_code)
+        self.assertNotEqual('', cm.exception.request_id)
+
 if __name__ == '__main__':
     unittest.main()
