@@ -17,7 +17,7 @@ The SDK of this version is dependent on the third-party HTTP library `requests <
 Running environment
 -------------------
 
-Python 2.7
+Python 2.7, Python 3.6
 
 
 Installation
