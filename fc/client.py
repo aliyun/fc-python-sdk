@@ -418,7 +418,7 @@ class Client(object):
             # codeZipFile has highest priority.
             file = open(codeZipFile, 'rb')
             data = file.read()
-            encoded = base64.b64encode(data)
+            encoded = base64.b64encode(data).decode('utf-8')
             payload['code'] = {'zipFile': encoded}
         elif codeDir:
             bytesIO = io.BytesIO()
