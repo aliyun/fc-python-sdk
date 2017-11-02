@@ -33,6 +33,9 @@ class TestFunction(unittest.TestCase):
         function = self.client.create_function(
             self.serviceName, functionName,
             handler='main.my_handler', runtime='python2.7', codeDir='test/hello_world', description=desc)
+        self.check_function(function,functionName, desc)
+
+    def check_function(self, function, functionName, desc):
         self.assertEqual(function['functionName'], functionName)
         self.assertEqual(function['runtime'], 'python2.7')
         self.assertEqual(function['handler'], 'main.my_handler')
@@ -70,6 +73,16 @@ class TestFunction(unittest.TestCase):
             self.client.get_function(self.serviceName, functionName)
 
         # TODO: test create with oss object code.
+       
+
+    def test_create_from_zip(self):
+        functionName= 'test_create_' + ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
+        desc = u'这是测试function'
+        logging.info('Create function: {0}'.format(functionName))
+        function = self.client.create_function(
+            self.serviceName, functionName,
+            handler='main.my_handler', runtime='python2.7', codeZipFile='test/hello_world/hello_world.zip', description=desc)
+        self.check_function(function, functionName, desc)
 
     def test_update(self):
         functionName = 'test_update_' + ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
@@ -79,9 +92,12 @@ class TestFunction(unittest.TestCase):
             handler='main.my_handler', runtime='python2.7', codeDir='test/hello_world')
 
         desc = 'function description'
-        func = self.client.update_function(self.serviceName, functionName, description=desc)
+        func = self.client.update_function(self.serviceName, functionName, codeDir='test/hello_world', description=desc)
         self.assertEqual(func['description'], desc)
         etag = func['etag']
+
+        func = self.client.update_function(self.serviceName, functionName, codeZipFile='test/hello_world/hello_world.zip', description=desc)
+        self.assertEqual(func['description'], desc)
 
         # expect the delete service failed because of invalid etag.
         with self.assertRaises(fc.FcError):
