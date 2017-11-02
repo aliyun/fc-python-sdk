@@ -418,12 +418,12 @@ class Client(object):
             # codeZipFile has highest priority.
             file = open(codeZipFile, 'rb')
             data = file.read()
-            encoded = base64.b64encode(data)
+            encoded = base64.b64encode(data).decode('utf-8')
             payload['code'] = {'zipFile': encoded}
         elif codeDir:
             bytesIO = io.BytesIO()
-            util.ZipDir(codeDir, bytesIO)
-            encoded = base64.b64encode(bytesIO.getvalue())
+            util.zip_dir(codeDir, bytesIO)
+            encoded = base64.b64encode(bytesIO.getvalue()).decode('utf-8')
             payload['code'] = {'zipFile': encoded}
         elif codeOSSBucket and codeOSSObject:
             payload['code'] = {'ossBucketName': codeOSSBucket, 'ossObjectName': codeOSSObject}
