@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import fc
+import fc2
 import logging
 import random
 import requests
@@ -13,7 +13,7 @@ import os
 class TestService(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super(TestService, self).__init__(*args, **kwargs)
-        self.client = fc.Client(
+        self.client = fc2.Client(
             endpoint=os.environ['ENDPOINT'],
             accessKeyID=os.environ['ACCESS_KEY_ID'],
             accessKeySecret=os.environ['ACCESS_KEY_SECRET'],
@@ -24,6 +24,10 @@ class TestService(unittest.TestCase):
         desc = u'这是测试service'
         logging.info('Create service: {0}'.format(name))
         service = self.client.create_service(name, description=desc)
+        etag = service.headers['etag']
+        self.assertNotEqual(etag, '')
+
+        service = service.data
         self.assertEqual(service['serviceName'], name)
         self.assertEqual(service['description'], desc)
         self.assertTrue('createdTime' in service)
@@ -31,19 +35,18 @@ class TestService(unittest.TestCase):
         self.assertTrue('logConfig' in service)
         self.assertTrue('role' in service)
         self.assertTrue('serviceId' in service)
-        etag = service['etag']
-        self.assertNotEqual(etag, '')
-
-        service = self.client.get_service(name, traceId=str(uuid.uuid4()))
+       
+        service = self.client.get_service(name, headers ={'x-fc-trace-id':str(uuid.uuid4())} )
+        service = service.data
         self.assertEqual(service['serviceName'], name)
         self.assertEqual(service['description'], desc)
 
         # expect the delete service failed because of invalid etag.
-        with self.assertRaises(fc.FcError):
-            self.client.delete_service(name, etag='invalid etag')
+        with self.assertRaises(fc2.FcError):
+            self.client.delete_service(name, headers ={'if-match':'invalid etag'})
 
         # now success with valid etag.
-        self.client.delete_service(name, etag=etag)
+        self.client.delete_service(name, headers ={'if-match': etag})
 
         # TODO: test create with logConfig and role.
 
@@ -54,16 +57,16 @@ class TestService(unittest.TestCase):
 
         desc = 'service description'
         service = self.client.update_service(name, desc)
-        self.assertEqual(service['description'], desc)
-        etag = service['etag']
+        self.assertEqual(service.data['description'], desc)
+        etag = service.headers['etag']
 
         # TODO: test create with logConfig and role.
 
         # expect the delete service failed because of invalid etag.
-        with self.assertRaises(fc.FcError):
-            self.client.update_service(name, description='invalid', etag='invalid etag')
+        with self.assertRaises(fc2.FcError):
+            self.client.update_service(name, description='invalid', headers ={'if-match':'invalid etag'})
 
-        self.assertEqual(service['description'], desc)
+        self.assertEqual(service.data['description'], desc)
 
         self.client.delete_service(name)
 
@@ -104,6 +107,7 @@ class TestService(unittest.TestCase):
         self.client.create_service(prefix + 'zzz')
 
         r = self.client.list_services(limit=2, startKey=prefix + 'b')
+        r = r.data
         services = r['services']
         nextToken = r['nextToken']
         self.assertEqual(len(services), 2)
@@ -112,6 +116,7 @@ class TestService(unittest.TestCase):
         self.assertTrue(services[1]['serviceName'], prefix + 'bde')
 
         r = self.client.list_services(limit=1, startKey=prefix + 'b', nextToken=nextToken)
+        r = r.data
         services = r['services']
         self.assertEqual(len(services), 1)
         self.assertTrue(services[0]['serviceName'], prefix + 'zzz')
@@ -119,16 +124,19 @@ class TestService(unittest.TestCase):
         # It's ok to omit the startKey and only provide continuationToken.
         # As long as the continuationToken is provided, the startKey is not considered.
         r = self.client.list_services(limit=1, nextToken=nextToken)
+        r = r.data
         services = r['services']
         self.assertEqual(len(services), 1)
         self.assertTrue(services[0]['serviceName'], prefix + 'zzz')
 
         # If continuationToken is provided, along with a prefix, then the prefix is considered.
         r = self.client.list_services(limit=2, prefix=prefix + 'x', nextToken=nextToken)
+        r = r.data
         services = r['services']
         self.assertEqual(len(services), 0)
 
         r = self.client.list_services(limit=2, prefix=prefix + 'a')
+        r = r.data
         services = r['services']
         self.assertEqual(len(services), 2)
         self.assertTrue(services[0]['serviceName'], prefix + 'abc')
@@ -136,6 +144,7 @@ class TestService(unittest.TestCase):
 
         # list servies with prefix and startKey
         r = self.client.list_services(limit=2, prefix=prefix + 'ab', startKey=prefix + 'abd')
+        r = r.data
         services = r['services']
         self.assertEqual(len(services), 1)
         self.assertTrue(services[0]['serviceName'], prefix + 'abd')
