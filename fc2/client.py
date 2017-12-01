@@ -561,7 +561,10 @@ class Client(object):
 
         return self._do_request(method, path, headers, params=params).json()
 
-    def invoke_function(self, serviceName, functionName, payload=None, logType='None', traceId=None):
+
+    def invoke_function(self, serviceName, functionName, payload=None, 
+                              customHeaders = {'x-fc-invocation-type': 'Sync', 'x-fc-log-type' : 'None'}):
+                                                           
         """
         Invoke the function synchronously.
         :param serviceName: (required, string) the name of the service.
@@ -571,28 +574,18 @@ class Client(object):
         :param logType: (optional, string) 'None' or 'Tail'. When invoke a function synchronously,
         you can set the log type to 'Tail' to get the last 4KB base64-encoded function log.
         :param traceId: (optional, string) a uuid to do the request tracing.
-        :return: function output bytes.
+        :param customHeaders: (required, dict) user-defined request header. 
+                            'x-fc-invocation-type' : require, 'Sync'/'Async' ,only two choice
+                            'x-fc-trace-id' : require, default is 'None'
+                            'x-fc-trace-id' : option
+                            # other can add user define header
+        :return: function output InvokeFunctionResponse object.
         """
         return self._invoke_function(
-            serviceName, functionName, payload=payload, invocationType='Sync', logType=logType, traceId=traceId)
+            serviceName, functionName, payload=payload, customHeaders=customHeaders)
 
-    def async_invoke_function(self, serviceName, functionName, payload=None, logType='None', traceId=None):
-        """
-        Invoke the function asynchronously.
-        :param serviceName: (required, string) the name of the service.
-        :param functionName: (required, string) the name of the function.
-        :param payload: (optional, bytes or seekable file-like object): the input of the function.
-        Invoke the function synchronously or asynchronously.
-        :param logType: (optional, string) 'None' or 'Tail'. When invoke a function synchronously,
-        you can set the log type to 'Tail' to get the last 4KB base64-encoded function log.
-        :param traceId: (optional, string) a uuid to do the request tracing.
-        :return: function output bytes.
-        """
-        return self._invoke_function(
-            serviceName, functionName, payload=payload, invocationType='Async', logType=logType, traceId=traceId)
 
-    def _invoke_function(self, serviceName, functionName,
-                        payload=None, invocationType='Sync', logType='None', traceId=None):
+    def _invoke_function(self, serviceName, functionName, payload=None, customHeaders = {}):
         """
         Invoke the function.
         :param serviceName: (required, string) the name of the service.
@@ -603,18 +596,18 @@ class Client(object):
         :param logType: (optional, string) 'None' or 'Tail'. When invoke a function synchronously,
         you can set the log type to 'Tail' to get the last 4KB base64-encoded function log.
         :param traceId: (optional, string) a uuid to do the request tracing.
-        :return: function output bytes.
+        :return: function output InvokeFunctionResponse object.
         """
         method = 'POST'
         path = '/{0}/services/{1}/functions/{2}/invocations'.format(self.api_version, serviceName, functionName)
         headers = self._build_common_headers()
-        headers['x-fc-invocation-type'] = invocationType
-        headers['x-fc-log-type'] = logType
-        if traceId:
-            headers['x-fc-trace-id'] = traceId
+
+        if customHeaders:
+            headers.update(customHeaders)
 
         # Sign the request and set the signature to headers.
         headers['authorization'] = self.auth.sign_request(method, path, headers)
+
 
         r = self._do_request(method, path, headers, body=payload)
         if r.headers.get('x-fc-error-type', ''):
@@ -623,4 +616,22 @@ class Client(object):
             logging.error(errmsg)
             raise self.__gen_request_err(r)
 
-        return r.content
+        return InvokeFunctionResponse(r.headers, r.content)
+
+class InvokeFunctionResponse(object):
+    def __init__(self, headers, data):
+        self._headers = headers
+        self._data = data
+
+    @property
+    def headers(self):
+        return self._headers
+
+    # user function return value
+    @property
+    def data(self):
+        return self._data
+
+
+
+
