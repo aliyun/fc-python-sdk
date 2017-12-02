@@ -38,6 +38,9 @@ class TestFunction(unittest.TestCase):
             self.check_function(function,functionName, desc, runtime)
 
     def check_function(self, function, functionName, desc, runtime = 'python2.7'):
+        etag = function.headers['etag']
+        self.assertNotEqual(etag, '')
+        function = function.data
         self.assertEqual(function['functionName'], functionName)
         self.assertEqual(function['runtime'], runtime)
         self.assertEqual(function['handler'], 'main.my_handler')
@@ -49,26 +52,26 @@ class TestFunction(unittest.TestCase):
         self.assertTrue('functionId' in function)
         self.assertTrue('memorySize' in function)
         self.assertTrue('timeout' in function)
-        etag = function['etag']
+        
         checksum = function['codeChecksum']
-        self.assertNotEqual(etag, '')
-
-        function = self.client.get_function(self.serviceName, functionName, traceId=str(uuid.uuid4()))
+        function = self.client.get_function(self.serviceName, functionName, customHeaders ={'x-fc-trace-id':str(uuid.uuid4())})
+        function = function.data
         self.assertEqual(function['functionName'], functionName)
         self.assertEqual(function['runtime'], runtime)
         self.assertEqual(function['handler'], 'main.my_handler')
         self.assertEqual(function['description'], desc)
 
         code = self.client.get_function_code(self.serviceName, functionName)
+        code = code.data
         self.assertEqual(code['checksum'], checksum)
         self.assertTrue(code['url'] != '')
 
         # expect the delete function  failed because of invalid etag.
         with self.assertRaises(fc2.FcError):
-            self.client.delete_function(self.serviceName, functionName, etag='invalid etag')
+            self.client.delete_function(self.serviceName, functionName, customHeaders ={'if-match': 'invalid etag'})
         
         # now success with valid etag.
-        self.client.delete_function(self.serviceName, functionName, etag=etag)
+        self.client.delete_function(self.serviceName, functionName, customHeaders ={'if-match': etag})
 
         # can not get the deleted function.
         with self.assertRaises(fc2.FcError):
@@ -97,15 +100,18 @@ class TestFunction(unittest.TestCase):
 
             desc = 'function description'
             func = self.client.update_function(self.serviceName, functionName, codeDir='test/hello_world', description=desc)
+            etag = func.headers['etag']
+            self.assertNotEqual(etag, '')
+            func = func.data
             self.assertEqual(func['description'], desc)
-            etag = func['etag']
 
             func = self.client.update_function(self.serviceName, functionName, codeZipFile='test/hello_world/hello_world.zip', description=desc)
+            func = func.data
             self.assertEqual(func['description'], desc)
 
             # expect the delete service failed because of invalid etag.
             with self.assertRaises(fc2.FcError):
-                self.client.update_function(self.serviceName, functionName, description='invalid', etag='invalid etag')
+                self.client.update_function(self.serviceName, functionName, description='invalid', customHeaders ={'if-match':'invalid etag'})
 
             self.assertEqual(func['description'], desc)
 
@@ -161,6 +167,7 @@ class TestFunction(unittest.TestCase):
                 handler='main.my_handler', runtime=runtime, codeZipFile='test/hello_world/hello_world.zip')
 
             r = self.client.list_functions(self.serviceName, limit=2, startKey=prefix + 'b')
+            r = r.data
             functions = r['functions']
             nextToken = r['nextToken']
             self.assertEqual(len(functions), 2)
@@ -169,6 +176,7 @@ class TestFunction(unittest.TestCase):
             self.assertTrue(functions[1]['functionName'], prefix + 'bde')
 
             r = self.client.list_functions(self.serviceName, limit=1, startKey=prefix + 'b', nextToken=nextToken)
+            r = r.data
             functions = r['functions']
             self.assertEqual(len(functions), 1)
             self.assertTrue(functions[0]['functionName'], prefix + 'zzz')
@@ -176,16 +184,19 @@ class TestFunction(unittest.TestCase):
             # It's ok to omit the startKey and only provide continuationToken.
             # As long as the continuationToken is provided, the startKey is not considered.
             r = self.client.list_functions(self.serviceName, limit=1, nextToken=nextToken)
+            r = r.data
             functions = r['functions']
             self.assertEqual(len(functions), 1)
             self.assertTrue(functions[0]['functionName'], prefix + 'zzz')
 
             # If continuationToken is provided, along with a prefix, then the prefix is considered.
             r = self.client.list_functions(self.serviceName, limit=2, prefix=prefix + 'x', nextToken=nextToken)
+            r = r.data
             functions = r['functions']
             self.assertEqual(len(functions), 0)
 
             r = self.client.list_functions(self.serviceName, limit=2, prefix=prefix + 'a')
+            r = r.data
             functions = r['functions']
             self.assertEqual(len(functions), 2)
             self.assertTrue(functions[0]['functionName'], prefix + 'abc')
@@ -193,6 +204,7 @@ class TestFunction(unittest.TestCase):
 
             # list functions with prefix and startKey
             r = self.client.list_functions(self.serviceName, limit=2, prefix=prefix + 'ab', startKey=prefix + 'abd')
+            r = r.data
             functions = r['functions']
             self.assertEqual(len(functions), 1)
             self.assertTrue(functions[0]['functionName'], prefix + 'abd')

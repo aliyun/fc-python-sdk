@@ -26,7 +26,7 @@ Install the official release version through PIP (taking Linux as an example):
 
 .. code-block:: bash
 
-    $ pip install aliyun-fc
+    $ pip install aliyun-fc2
 
 You can also install the unzipped installer package directly:
 
@@ -36,7 +36,7 @@ You can also install the unzipped installer package directly:
 
 Notice
 -------------------
-We suggest using fc2, which corresponds to the fc2-master branch，The main difference between fc and fc2 is:
+We suggest using fc2, oldversion fc is in fc1.x branch, The main difference between fc and fc2 is:
 
 1, The invoke fuction user can add custom headers
 
@@ -58,7 +58,7 @@ We suggest using fc2, which corresponds to the fc2-master branch，The main diff
                             'x-fc-trace-id' : require, default is 'None'
                             'x-fc-trace-id' : option
                             # other can add user define header
-        :return: function output InvokeFunctionResponse object.
+        :return: function output FcHttpResponse object.
 
         """
         return self._invoke_function(
@@ -69,16 +69,16 @@ Custom headers, for example
 
 .. code-block:: python
 
-client.invokeFunction(serviceName, funcName, 'event', {
-  'x-fc-invocation-type': 'Async'
-})
+    client.invokeFunction(serviceName, funcName, 'event', {
+      'x-fc-invocation-type': 'Async'
+    })
 
 
-2, The reponse returned by the user is the following object, where data represents the "reponse" corresponding to fc.
+2, The all http response returned by the user is the following object, where data represents the "response" corresponding to fc.
 
 .. code-block:: python
 
-    class InvokeFunctionResponse(object):
+    class FcHttpResponse(object):
         def __init__(self, headers, data):
             self._headers = headers
             self._data = data
@@ -87,16 +87,16 @@ client.invokeFunction(serviceName, funcName, 'event', {
         def headers(self):
             return self._headers
 
-        # user function return value
         @property
         def data(self):
             return self._data
 
-Install the official fc2 release version through PIP (taking Linux as an example):
+
+if you still use fc1, you can install the official fc1 release version through PIP (taking Linux as an example):
 
 .. code-block:: bash
 
-    $ pip install aliyun-fc2
+    $ pip install aliyun-fc
 
 Getting started
 -------------------
@@ -105,7 +105,9 @@ Getting started
 
     # -*- coding: utf-8 -*-
 
-    import fc
+    # import fc # if use fc1
+
+    import fc2 as fc
 
     # To know the endpoint and access key id/secret info, please refer to:
     # https://help.aliyun.com/document_detail/52984.html
