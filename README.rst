@@ -19,15 +19,14 @@ Running environment
 
 Python 2.7, Python 3.6
 
-
 Installation
-----------
+-------------------
 
 Install the official release version through PIP (taking Linux as an example):
 
 .. code-block:: bash
 
-    $ pip install aliyun-fc
+    $ pip install aliyun-fc2
 
 You can also install the unzipped installer package directly:
 
@@ -35,15 +34,80 @@ You can also install the unzipped installer package directly:
 
     $ sudo python setup.py install
 
+Notice
+-------------------
+We suggest using fc2, oldversion fc is in fc1.x branch, The main difference between fc and fc2 is:
+
+1, The invoke fuction user can add custom headers
+
+.. code-block:: python
+
+    def invoke_function(self, serviceName, functionName, payload=None, 
+            customHeaders = {'x-fc-invocation-type': 'Sync', 'x-fc-log-type' : 'None'}):                                           
+        """
+        Invoke the function synchronously.
+        :param serviceName: (required, string) the name of the service.
+        :param functionName: (required, string) the name of the function.
+        :param payload: (optional, bytes or seekable file-like object): the input of the function.
+        Invoke the function synchronously or asynchronously.
+        :param logType: (optional, string) 'None' or 'Tail'. When invoke a function synchronously,
+        you can set the log type to 'Tail' to get the last 4KB base64-encoded function log.
+        :param traceId: (optional, string) a uuid to do the request tracing.
+        :param customHeaders: (required, dict) user-defined request header. 
+                            'x-fc-invocation-type' : require, 'Sync'/'Async' ,only two choice
+                            'x-fc-trace-id' : require, default is 'None'
+                            'x-fc-trace-id' : option
+                            # other can add user define header
+        :return: function output FcHttpResponse object.
+
+        """
+        return self._invoke_function(
+            serviceName, functionName, payload=payload, customHeaders=customHeaders)
+
+
+Custom headers, for example
+
+.. code-block:: python
+
+    client.invokeFunction(serviceName, funcName, 'event', {
+      'x-fc-invocation-type': 'Async'
+    })
+
+
+2, The all http response returned by the user is the following object, where data represents the "response" corresponding to fc.
+
+.. code-block:: python
+
+    class FcHttpResponse(object):
+        def __init__(self, headers, data):
+            self._headers = headers
+            self._data = data
+
+        @property
+        def headers(self):
+            return self._headers
+
+        @property
+        def data(self):
+            return self._data
+
+
+if you still use fc1, you can install the official fc1 release version through PIP (taking Linux as an example):
+
+.. code-block:: bash
+
+    $ pip install aliyun-fc
 
 Getting started
----------------
+-------------------
 
 .. code-block:: python
 
     # -*- coding: utf-8 -*-
 
-    import fc
+    # import fc # if use fc1
+
+    import fc2 as fc
 
     # To know the endpoint and access key id/secret info, please refer to:
     # https://help.aliyun.com/document_detail/52984.html
@@ -70,7 +134,7 @@ Getting started
     r = client.invoke_function('service_name', 'function_name', payload=src)
     # save the result as the output image.
     dst = open('dst_image_file_path', 'wb')
-    dst.write(r)
+    dst.write(r) # if fc2, dst.write(r.data)
     src.close()
     dst.close()
 

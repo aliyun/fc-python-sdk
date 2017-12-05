@@ -96,7 +96,7 @@ class Client(object):
         err_msg = json.dumps(err_d)
         return fc_exceptions.get_fc_error(err_msg, r.status_code, err_code, err_d['RequestId'])
 
-    def create_service(self, serviceName, description=None, logConfig=None, role=None, traceId=None):
+    def create_service(self, serviceName, description=None, logConfig=None, role=None, customHeaders={}):
         """
         Create a service.
         :param serviceName: name of the service.
@@ -109,12 +109,14 @@ class Client(object):
         :param role: The Aliyun Resource Name (ARN) of the RAM role that FunctionCompute assumes when it executes
         your function to access any other Aliyun resources.
         For more information, see: https://help.aliyun.com/document_detail/52885.html
+        :param customHeaders, 'x-fc-trace-id': string (a uuid to do the request tracing), etc
         :param traceId:(optional, string) a uuid to do the request tracing.
-        :return: dict. For more information, see: https://help.aliyun.com/document_detail/52877.html#createservice
+        :return: FcHttpResponse
+        headers: dict {'etag':'string', ...}
+        data: dict. For more information, see: https://help.aliyun.com/document_detail/52877.html#createservice
         {
             'createdTime': 'string',
             'description': 'string',
-            'etag': 'string',
             'lastModifiedTime': 'string',
             'logConfig': {
                 'project': 'string',
@@ -128,8 +130,8 @@ class Client(object):
         method = 'POST'
         path = '/{0}/services'.format(self.api_version)
         headers = self._build_common_headers()
-        if traceId:
-            headers['x-fc-trace-id'] = traceId
+        if customHeaders:
+            headers.update(customHeaders)
 
         # Sign the request and set the signature to headers.
         headers['authorization'] = self.auth.sign_request(method, path, headers)
@@ -141,32 +143,32 @@ class Client(object):
             payload['role'] = role
 
         r = self._do_request(method, path, headers, body=json.dumps(payload).encode('utf-8'))
-        dict = r.json()
-        dict['etag'] = r.headers['etag']
-        return dict
+       # 'etag' now in headers 
+        return FcHttpResponse(r.headers, r.json())
 
-    def delete_service(self, serviceName, etag=None, traceId=None):
+    def delete_service(self, serviceName, customHeaders={}):
         """
         Delete the specified service.
         :param service_name: name of the service.
-        :param etag: (optional, string) delete the service only when matched the given etag.
-        :param trace_id: (optional, string) a uuid to do the request tracing.
+        :param customHeaders, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, 'if-match': string (delete the service only when matched the given etag.)
+            3, user define key value
         :return: None
         """
         method = 'DELETE'
         path = '/{0}/services/{1}'.format(self.api_version, serviceName)
         headers = self._build_common_headers()
-        if etag:
-            headers['if-match'] = etag
-        if traceId:
-            headers['x-fc-trace-id'] = traceId
+
+        if customHeaders:
+            headers.update(customHeaders)
 
         # Sign the request and set the signature to headers.
         headers['authorization'] = self.auth.sign_request(method, path, headers)
 
         self._do_request(method, path, headers)
 
-    def update_service(self, serviceName, description=None, logConfig=None, role=None, etag=None, traceId=None):
+    def update_service(self, serviceName, description=None, logConfig=None, role=None, customHeaders={}):
         """
         Update the service attributes.
         :param serviceName: name of the service.
@@ -179,13 +181,16 @@ class Client(object):
         :param role: The Aliyun Resource Name (ARN) of the RAM role that FunctionCompute assumes when it executes
         your function to access any other Aliyun resources.
         For more information, see: https://help.aliyun.com/document_detail/52885.html
-        :param etag: (optional, string) delete the service only when matched the given etag.
-        :param traceId:(optional, string) a uuid to do the request tracing.
-        :return: dict. For more information, see: https://help.aliyun.com/document_detail/52877.html#createservice
+        :param customHeaders, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, 'if-match': string (update the service only when matched the given etag.)
+            3, user define key value
+        :return: FcHttpResponse
+        headers: dict {'etag':'string', ...}
+        data:dict. For more information, see: https://help.aliyun.com/document_detail/52877.html#createservice
         {
             'createdTime': 'string',
             'description': 'string',
-            'etag': 'string',
             'lastModifiedTime': 'string',
             'logConfig': {
                 'project': 'string',
@@ -199,10 +204,9 @@ class Client(object):
         method = 'PUT'
         path = '/{0}/services/{1}'.format(self.api_version, serviceName)
         headers = self._build_common_headers()
-        if etag:
-            headers['if-match'] = etag
-        if traceId:
-            headers['x-fc-trace-id'] = traceId
+
+        if customHeaders:
+            headers.update(customHeaders)
 
         # Sign the request and set the signature to headers.
         headers['authorization'] = self.auth.sign_request(method, path, headers)
@@ -216,38 +220,46 @@ class Client(object):
             payload['role'] = role
 
         r = self._do_request(method, path, headers, body=json.dumps(payload).encode('utf-8'))
-        dict = r.json()
-        dict['etag'] = r.headers['etag']
-        return dict
+        # 'etag' now in headers
+        return FcHttpResponse(r.headers, r.json())
 
-    def get_service(self, serviceName, traceId=None):
+    def get_service(self, serviceName, customHeaders={}):
         """
         Get the service configuration.
         :param serviceName: (string) name of the service.
-        :param traceId: (optional, string) trace id of the request.
-        :return: service configuration.
-        :rtype: dict
+        :param customHeaders, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, user define key value
+        :return: FcHttpResponse
+        headers: dict {'etag':'string', ...}
+        data: dict service configuration.
         """
         method = 'GET'
         path = '/{0}/services/{1}'.format(self.api_version, serviceName)
         headers = self._build_common_headers()
-        if traceId:
-            headers['x-fc-trace-id'] = traceId
+
+        if customHeaders:
+            headers.update(customHeaders)
 
         # Sign the request and set the signature to headers.
         headers['authorization'] = self.auth.sign_request(method, path, headers)
 
-        return self._do_request(method, path, headers).json()
+        r = self._do_request(method, path, headers)
+        return FcHttpResponse(r.headers, r.json())
 
-    def list_services(self, limit=None, nextToken=None, prefix=None, startKey=None, traceId=None):
+    def list_services(self, limit=None, nextToken=None, prefix=None, startKey=None, customHeaders={}):
         """
         List the services in the current account.
         :param limit: (optional, integer) the total number of the returned services.
         :param nextToken: (optional, string) continue listing the service from the previous point.
         :param prefix: (optional, string) list the services with the given prefix.
         :param startKey: (optional, string) startKey is where you want to start listing from.
-        :param traceId: (optional, string) trace id of the request.
-        :return: dict, including all service information.
+        :param customHeaders, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, user define key value
+        :return: FcHttpResponse
+        headers: dict
+        data: dict, including all service information.
         {
             'services':
             [
@@ -271,28 +283,22 @@ class Client(object):
         method = 'GET'
         path = '/{0}/services'.format(self.api_version)
         headers = self._build_common_headers()
-        if traceId:
-            headers['x-fc-trace-id'] = traceId
+        if customHeaders:
+            headers.update(customHeaders)
 
         # Sign the request and set the signature to headers.
         headers['authorization'] = self.auth.sign_request(method, path, headers)
 
-        params = {}
-        if limit:
-            params['limit'] = limit
-        if prefix:
-            params['prefix'] = prefix
-        if nextToken:
-            params['nextToken'] = nextToken
-        if startKey:
-            params['startKey'] = startKey
+        paramlst = [('limit',  limit), ('prefix', prefix), ('nextToken', nextToken), ('startKey', startKey)]
+        params = dict( (k,v) for k, v in paramlst if v )
 
-        return self._do_request(method, path, headers, params=params).json()
+        r = self._do_request(method, path, headers, params=params)
+        return FcHttpResponse(r.headers, r.json())
 
     def create_function(
             self, serviceName, functionName, runtime, handler,
             codeZipFile=None, codeDir=None, codeOSSBucket=None, codeOSSObject=None,
-            description=None, memorySize=256, timeout=60, traceId=None):
+            description=None, memorySize=256, timeout=60, customHeaders={}):
         """
         Create a function.
         :param serviceName: (required, string) the name of the service that the function belongs to.
@@ -306,8 +312,12 @@ class Client(object):
         :param description: (optional, string) the readable description of the function.
         :param memorySize: (optional, integer) the memory size of the function, in MB.
         :param timeout: (optional, integer) the max execution time of the function, in second.
-        :param traceId: (optional, string) a uuid to do the request tracing.
-        :return: dict of the function attributes.
+        :param customHeaders, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, user define key value
+        :return: FcHttpResponse
+        headers: dict {'etag':'string', ...}
+        data: dict of the function attributes.
         {
             'codeChecksum': 'string',     // CRC64 checksum
             'codeSize': 1024,             // in byte
@@ -320,14 +330,13 @@ class Client(object):
             'memorySize': 512,            // in MB
             'runtime': 'string',
             'timeout': 60,                // in second
-            'etag': 'string',
         }
         """
         method = 'POST'
         path = '/{0}/services/{1}/functions'.format(self.api_version, serviceName)
         headers = self._build_common_headers()
-        if traceId:
-            headers['x-fc-trace-id'] = traceId
+        if customHeaders:
+            headers.update(customHeaders)
 
         # Sign the request and set the signature to headers.
         headers['authorization'] = self.auth.sign_request(method, path, headers)
@@ -357,15 +366,14 @@ class Client(object):
             payload['timeout'] = timeout
 
         r = self._do_request(method, path, headers, body=json.dumps(payload).encode('utf-8'))
-        dict = r.json()
-        dict['etag'] = r.headers['etag']
-        return dict
+        # 'etag' now in headers
+        return FcHttpResponse(r.headers, r.json())
 
     def update_function(
             self, serviceName, functionName,
             codeZipFile=None, codeDir=None, codeOSSBucket=None, codeOSSObject=None,
             description=None, handler=None, memorySize=None, runtime=None, timeout=None,
-            etag=None, traceId=None):
+            customHeaders={}):
         """
         Update the function.
         :param serviceName: (required, string) the name of the service that the function belongs to.
@@ -380,7 +388,13 @@ class Client(object):
         :param memorySize: (optional, integer) the memory size of the function, in MB.
         :param timeout: (optional, integer) the max execution time of the function, in second.
         :param etag: (optional, string) delete the service only when matched the given etag.
-        :param traceId: (optional, string) a uuid to do the request tracing.        :return: dict of the function attributes.
+        :param customHeaders, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, 'if-match': string (update the function only when matched the given etag.)
+            3, user define key value      
+        :return: FcHttpResponse
+        headers: dict {'etag':'string', ...}
+        data: dict of the function attributes.
         {
             'codeChecksum': 'string',     // CRC64 checksum
             'codeSize': 1024,             // in byte
@@ -393,16 +407,13 @@ class Client(object):
             'memorySize': 512,            // in MB
             'runtime': 'string',
             'timeout': 60,                // in second
-            'etag': 'string',
         }
         """
         method = 'PUT'
         path = '/{0}/services/{1}/functions/{2}'.format(self.api_version, serviceName, functionName)
         headers = self._build_common_headers()
-        if etag:
-            headers['if-match'] = etag
-        if traceId:
-            headers['x-fc-trace-id'] = traceId
+        if customHeaders:
+            headers.update(customHeaders)
 
         # Sign the request and set the signature to headers.
         headers['authorization'] = self.auth.sign_request(method, path, headers)
@@ -438,62 +449,67 @@ class Client(object):
             payload['timeout'] = timeout
 
         r = self._do_request(method, path, headers, body=json.dumps(payload).encode('utf-8'))
-        dict = r.json()
-        dict['etag'] = r.headers['etag']
-        return dict
+        # 'etag' now in headers
+        return FcHttpResponse(r.headers, r.json())
 
-    def delete_function(self, serviceName, functionName, etag=None, traceId=None):
+    def delete_function(self, serviceName, functionName, customHeaders={}):
         """
         Delete the specified function.
         :param serviceName: name of the service.
         :param serviceName: name of the function.
-        :param etag: (optional, string) delete the service only when matched the given etag.
-        :param traceId: (optional, string) a uuid to do the request tracing.
+        :param customHeaders, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, 'if-match': string (delete the function only when matched the given etag.)
+            3, user define key value  
         :return: None
         """
         method = 'DELETE'
         path = '/{0}/services/{1}/functions/{2}'.format(self.api_version, serviceName, functionName)
         headers = self._build_common_headers()
-        if etag:
-            headers['if-match'] = etag
-        if traceId:
-            headers['x-fc-trace-id'] = traceId
+        if customHeaders:
+            headers.update(customHeaders)
 
         # Sign the request and set the signature to headers.
         headers['authorization'] = self.auth.sign_request(method, path, headers)
 
         self._do_request(method, path, headers)
 
-    def get_function(self, serviceName, functionName, traceId=None):
+    def get_function(self, serviceName, functionName, customHeaders={}):
         """
         Get the function configuration.
         :param serviceName: (required, string) name of the service.
         :param functionName: (required, string) name of the function.
-        :param traceId: (optional, string) trace id of the request.
-        :return: function configuration.
-        :rtype: dict
+        :param customHeaders, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, user define key value  
+        :return: FcHttpResponse
+        headers: dict {'etag':'string', ...}
+        data: dict function configuration.
         """
         method = 'GET'
         path = '/{0}/services/{1}/functions/{2}'.format(self.api_version, serviceName, functionName)
         headers = self._build_common_headers()
-        if traceId:
-            headers['x-fc-trace-id'] = traceId
+        if customHeaders:
+            headers.update(customHeaders)
 
         # Sign the request and set the signature to headers.
         headers['authorization'] = self.auth.sign_request(method, path, headers)
 
         r = self._do_request(method, path, headers)
-        dict = r.json()
-        dict['etag'] = r.headers['etag']
-        return dict
+        # 'etag' now in headers
+        return FcHttpResponse(r.headers, r.json())
 
-    def get_function_code(self, serviceName, functionName, traceId=None):
+    def get_function_code(self, serviceName, functionName, customHeaders={}):
         """
         Get the function code.
         :param serviceName: (required, string) name of the service.
         :param functionName: (required, string) name of the function.
-        :param traceId: (optional, string) trace id of the request.
-        :return: dict, including function code information.
+        :param customHeaders, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, user define key value  
+        :return: FcHttpResponse
+        headers: dict
+        data: dict, including function code information.
         {
             'checksum': 'string',  // CRC64 checksum
             'url': 'string',       // a download url of the code package
@@ -502,23 +518,28 @@ class Client(object):
         method = 'GET'
         path = '/{0}/services/{1}/functions/{2}/code'.format(self.api_version, serviceName, functionName)
         headers = self._build_common_headers()
-        if traceId:
-            headers['x-fc-trace-id'] = traceId
+        if customHeaders:
+            headers.update(customHeaders)
 
         # Sign the request and set the signature to headers.
         headers['authorization'] = self.auth.sign_request(method, path, headers)
 
-        return self._do_request(method, path, headers).json()
+        r = self._do_request(method, path, headers)
+        return FcHttpResponse(r.headers, r.json())
 
-    def list_functions(self, serviceName, limit=None, nextToken=None, prefix=None, startKey=None, traceId=None):
+    def list_functions(self, serviceName, limit=None, nextToken=None, prefix=None, startKey=None, customHeaders={}):
         """
         List the functions of the specified service.
         :param limit: (optional, integer) the total number of the returned services.
         :param nextToken: (optional, string) continue listing the service from the previous point.
         :param prefix: (optional, string) list the services with the given prefix.
         :param startKey: (optional, string) startKey is where you want to start listing from.
-        :param traceId: (optional, string) trace id of the request.
-        :return: dict, including all function information.
+        :param customHeaders, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, user define key value
+        :return: FcHttpResponse
+        headers: dict
+        data: dict, including all function information.
         {
             'functions':
             [
@@ -543,25 +564,22 @@ class Client(object):
         method = 'GET'
         path = '/{0}/services/{1}/functions'.format(self.api_version, serviceName)
         headers = self._build_common_headers()
-        if traceId:
-            headers['x-fc-trace-id'] = traceId
+        if customHeaders:
+            headers.update(customHeaders)
 
         # Sign the request and set the signature to headers.
         headers['authorization'] = self.auth.sign_request(method, path, headers)
 
-        params = {}
-        if limit:
-            params['limit'] = limit
-        if prefix:
-            params['prefix'] = prefix
-        if nextToken:
-            params['nextToken'] = nextToken
-        if startKey:
-            params['startKey'] = startKey
+        paramlst = [('limit',  limit), ('prefix', prefix), ('nextToken', nextToken), ('startKey', startKey)]
+        params = dict( (k,v) for k, v in paramlst if v )
 
-        return self._do_request(method, path, headers, params=params).json()
+        r = self._do_request(method, path, headers, params=params)
+        return FcHttpResponse(r.headers, r.json())
 
-    def invoke_function(self, serviceName, functionName, payload=None, logType='None', traceId=None):
+
+    def invoke_function(self, serviceName, functionName, payload=None, 
+                              customHeaders = {'x-fc-invocation-type': 'Sync', 'x-fc-log-type' : 'None'}):
+                                                           
         """
         Invoke the function synchronously.
         :param serviceName: (required, string) the name of the service.
@@ -571,50 +589,23 @@ class Client(object):
         :param logType: (optional, string) 'None' or 'Tail'. When invoke a function synchronously,
         you can set the log type to 'Tail' to get the last 4KB base64-encoded function log.
         :param traceId: (optional, string) a uuid to do the request tracing.
-        :return: function output bytes.
-        """
-        return self._invoke_function(
-            serviceName, functionName, payload=payload, invocationType='Sync', logType=logType, traceId=traceId)
-
-    def async_invoke_function(self, serviceName, functionName, payload=None, logType='None', traceId=None):
-        """
-        Invoke the function asynchronously.
-        :param serviceName: (required, string) the name of the service.
-        :param functionName: (required, string) the name of the function.
-        :param payload: (optional, bytes or seekable file-like object): the input of the function.
-        Invoke the function synchronously or asynchronously.
-        :param logType: (optional, string) 'None' or 'Tail'. When invoke a function synchronously,
-        you can set the log type to 'Tail' to get the last 4KB base64-encoded function log.
-        :param traceId: (optional, string) a uuid to do the request tracing.
-        :return: function output bytes.
-        """
-        return self._invoke_function(
-            serviceName, functionName, payload=payload, invocationType='Async', logType=logType, traceId=traceId)
-
-    def _invoke_function(self, serviceName, functionName,
-                        payload=None, invocationType='Sync', logType='None', traceId=None):
-        """
-        Invoke the function.
-        :param serviceName: (required, string) the name of the service.
-        :param functionName: (required, string) the name of the function.
-        :param payload: (optional, bytes or seekable file-like object): the input of the function.
-        :param invocationType: (optional, string) 'Sync' or 'Async'.
-        Invoke the function synchronously or asynchronously.
-        :param logType: (optional, string) 'None' or 'Tail'. When invoke a function synchronously,
-        you can set the log type to 'Tail' to get the last 4KB base64-encoded function log.
-        :param traceId: (optional, string) a uuid to do the request tracing.
-        :return: function output bytes.
+        :param customHeaders: (required, dict) user-defined request header. 
+                            'x-fc-invocation-type' : require, 'Sync'/'Async' ,only two choice
+                            'x-fc-trace-id' : require, default is 'None'
+                            'x-fc-trace-id' : option
+                            # other can add user define header
+        :return: function output FcHttpResponse object.
         """
         method = 'POST'
         path = '/{0}/services/{1}/functions/{2}/invocations'.format(self.api_version, serviceName, functionName)
         headers = self._build_common_headers()
-        headers['x-fc-invocation-type'] = invocationType
-        headers['x-fc-log-type'] = logType
-        if traceId:
-            headers['x-fc-trace-id'] = traceId
+
+        if customHeaders:
+            headers.update(customHeaders)
 
         # Sign the request and set the signature to headers.
         headers['authorization'] = self.auth.sign_request(method, path, headers)
+
 
         r = self._do_request(method, path, headers, body=payload)
         if r.headers.get('x-fc-error-type', ''):
@@ -623,4 +614,17 @@ class Client(object):
             logging.error(errmsg)
             raise self.__gen_request_err(r)
 
-        return r.content
+        return FcHttpResponse(r.headers, r.content)
+
+class FcHttpResponse(object):
+    def __init__(self, headers, data):
+        self._headers = headers
+        self._data = data
+
+    @property
+    def headers(self):
+        return self._headers
+
+    @property
+    def data(self):
+        return self._data
