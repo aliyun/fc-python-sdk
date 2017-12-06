@@ -10,7 +10,7 @@ except ImportError:
 
 
 version = ''
-with open('fc/__init__.py', 'r') as fd:
+with open('fc2/__init__.py', 'r') as fd:
     version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]',
                         fd.read(), re.MULTILINE).group(1)
 
@@ -22,11 +22,11 @@ with open('README.rst', 'rb') as f:
     readme = f.read().decode('utf-8')
 
 setup(
-    name='aliyun-fc',
+    name='aliyun-fc2',
     version=version,
-    description='Aliyun FunctionCompute SDK',
+    description='Aliyun FunctionCompute SDK2',
     long_description=readme,
-    packages=['fc'],
+    packages=['fc2'],
     install_requires=['requests!=2.9.0'
                       ],
     include_package_data=True,

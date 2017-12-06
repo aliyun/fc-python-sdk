@@ -12,7 +12,7 @@ module.exports.resize = function(event, context, callback) {
       callback(err)
       return
     }
-    image.resize(128, 128)
+    image.resize(32, 32)
     .write("/tmp/serverless_128.png", function(err) {
       if (err) {
         console.error("failed to write image");
