@@ -20,14 +20,47 @@ Running environment
 Python 2.7, Python 3.6
 
 
+Notice
+-------------------
+fc and fc2 are not compatible, now master repo is fc2, if you still use fc, 1.x branch is what you need.
+We suggest using fc2, The main difference between fc and fc2 is:
+
+1, all http request fuction can set headers
+
+.. code-block:: python
+
+    def invoke_function(self, serviceName, functionName, payload=None, 
+            headers = {'x-fc-invocation-type': 'Sync', 'x-fc-log-type' : 'None'}):                                           
+        ...
+
+
+2, The all http response returned by the user is the following object
+
+.. code-block:: python
+
+    class FcHttpResponse(object):
+        def __init__(self, headers, data):
+            self._headers = headers
+            self._data = data
+
+        @property
+        def headers(self):
+            return self._headers
+
+        @property
+        def data(self):
+            return self._data
+
+Note: for invoke function, data is bytes, for other apis, data is dict
+
 Installation
-----------
+-------------------
 
 Install the official release version through PIP (taking Linux as an example):
 
 .. code-block:: bash
 
-    $ pip install aliyun-fc
+    $ pip install aliyun-fc2
 
 You can also install the unzipped installer package directly:
 
@@ -36,18 +69,25 @@ You can also install the unzipped installer package directly:
     $ sudo python setup.py install
 
 
+if you still use fc, you can install the official fc1 release version through PIP (taking Linux as an example):
+
+.. code-block:: bash
+
+    $ pip install aliyun-fc
+
 Getting started
----------------
+-------------------
 
 .. code-block:: python
 
     # -*- coding: utf-8 -*-
 
-    import fc
+    import fc2
+
 
     # To know the endpoint and access key id/secret info, please refer to:
     # https://help.aliyun.com/document_detail/52984.html
-    client = fc.Client(
+    client = fc2.Client(
         endpoint='<Your Endpoint>',
         accessKeyID='<Your AccessKeyID>',
         accessKeySecret='<Your AccessKeySecret>')
@@ -70,7 +110,7 @@ Getting started
     r = client.invoke_function('service_name', 'function_name', payload=src)
     # save the result as the output image.
     dst = open('dst_image_file_path', 'wb')
-    dst.write(r)
+    dst.write(r.data)
     src.close()
     dst.close()
 

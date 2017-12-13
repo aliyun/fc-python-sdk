@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import fc
+import fc2
 import logging
 import random
 import requests
@@ -16,7 +16,7 @@ from aliyunsdksts.request.v20150401 import AssumeRoleRequest
 class TestFunction(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super(TestFunction, self).__init__(*args, **kwargs)
-        self.client = fc.Client(
+        self.client = fc2.Client(
             endpoint=os.environ['ENDPOINT'],
             accessKeyID=os.environ['ACCESS_KEY_ID'],
             accessKeySecret=os.environ['ACCESS_KEY_SECRET'],
@@ -33,11 +33,14 @@ class TestFunction(unittest.TestCase):
         function = self.client.create_function(
             self.serviceName, functionName,
             handler='main.my_handler', runtime='python2.7', codeDir='test/hello_world', description=desc)
-        self.check_function(function,functionName, desc)
+        self.check_function(function,functionName, desc, 'python2.7')
 
-    def check_function(self, function, functionName, desc):
+    def check_function(self, function, functionName, desc, runtime = 'python2.7'):
+        etag = function.headers['etag']
+        self.assertNotEqual(etag, '')
+        function = function.data
         self.assertEqual(function['functionName'], functionName)
-        self.assertEqual(function['runtime'], 'python2.7')
+        self.assertEqual(function['runtime'], runtime)
         self.assertEqual(function['handler'], 'main.my_handler')
         self.assertEqual(function['description'], desc)
         self.assertTrue('codeChecksum' in function)
@@ -47,29 +50,29 @@ class TestFunction(unittest.TestCase):
         self.assertTrue('functionId' in function)
         self.assertTrue('memorySize' in function)
         self.assertTrue('timeout' in function)
-        etag = function['etag']
+        
         checksum = function['codeChecksum']
-        self.assertNotEqual(etag, '')
-
-        function = self.client.get_function(self.serviceName, functionName, traceId=str(uuid.uuid4()))
+        function = self.client.get_function(self.serviceName, functionName, headers ={'x-fc-trace-id':str(uuid.uuid4())})
+        function = function.data
         self.assertEqual(function['functionName'], functionName)
-        self.assertEqual(function['runtime'], 'python2.7')
+        self.assertEqual(function['runtime'], runtime)
         self.assertEqual(function['handler'], 'main.my_handler')
         self.assertEqual(function['description'], desc)
 
         code = self.client.get_function_code(self.serviceName, functionName)
+        code = code.data
         self.assertEqual(code['checksum'], checksum)
         self.assertTrue(code['url'] != '')
 
         # expect the delete function  failed because of invalid etag.
-        with self.assertRaises(fc.FcError):
-            self.client.delete_function(self.serviceName, functionName, etag='invalid etag')
+        with self.assertRaises(fc2.FcError):
+            self.client.delete_function(self.serviceName, functionName, headers ={'if-match': 'invalid etag'})
         
         # now success with valid etag.
-        self.client.delete_function(self.serviceName, functionName, etag=etag)
+        self.client.delete_function(self.serviceName, functionName, headers ={'if-match': etag})
 
         # can not get the deleted function.
-        with self.assertRaises(fc.FcError):
+        with self.assertRaises(fc2.FcError):
             self.client.get_function(self.serviceName, functionName)
 
         # TODO: test create with oss object code.
@@ -82,7 +85,7 @@ class TestFunction(unittest.TestCase):
         function = self.client.create_function(
             self.serviceName, functionName,
             handler='main.my_handler', runtime='python2.7', codeZipFile='test/hello_world/hello_world.zip', description=desc)
-        self.check_function(function, functionName, desc)
+        self.check_function(function, functionName, desc, 'python2.7')
 
     def test_update(self):
         functionName = 'test_update_' + ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
@@ -93,15 +96,18 @@ class TestFunction(unittest.TestCase):
 
         desc = 'function description'
         func = self.client.update_function(self.serviceName, functionName, codeDir='test/hello_world', description=desc)
+        etag = func.headers['etag']
+        self.assertNotEqual(etag, '')
+        func = func.data
         self.assertEqual(func['description'], desc)
-        etag = func['etag']
 
         func = self.client.update_function(self.serviceName, functionName, codeZipFile='test/hello_world/hello_world.zip', description=desc)
+        func = func.data
         self.assertEqual(func['description'], desc)
 
         # expect the delete service failed because of invalid etag.
-        with self.assertRaises(fc.FcError):
-            self.client.update_function(self.serviceName, functionName, description='invalid', etag='invalid etag')
+        with self.assertRaises(fc2.FcError):
+            self.client.update_function(self.serviceName, functionName, description='invalid', headers ={'if-match':'invalid etag'})
 
         self.assertEqual(func['description'], desc)
 
@@ -136,26 +142,29 @@ class TestFunction(unittest.TestCase):
         except:
             pass
 
+        runtime = 'python2.7'
+
         self.client.create_function(
             self.serviceName, prefix + 'abc',
-            handler='main.my_handler', runtime='python2.7', codeZipFile='test/hello_world/hello_world.zip')
+            handler='main.my_handler', runtime=runtime, codeZipFile='test/hello_world/hello_world.zip')
         self.client.create_function(
             self.serviceName, prefix + 'abd',
-            handler='main.my_handler', runtime='python2.7', codeZipFile='test/hello_world/hello_world.zip')
+            handler='main.my_handler', runtime=runtime, codeZipFile='test/hello_world/hello_world.zip')
         self.client.create_function(
             self.serviceName, prefix + 'ade',
-            handler='main.my_handler', runtime='python2.7', codeZipFile='test/hello_world/hello_world.zip')
+            handler='main.my_handler', runtime=runtime, codeZipFile='test/hello_world/hello_world.zip')
         self.client.create_function(
             self.serviceName, prefix + 'bcd',
-            handler='main.my_handler', runtime='python2.7', codeZipFile='test/hello_world/hello_world.zip')
+            handler='main.my_handler', runtime=runtime, codeZipFile='test/hello_world/hello_world.zip')
         self.client.create_function(
             self.serviceName, prefix + 'bde',
-            handler='main.my_handler', runtime='python2.7', codeZipFile='test/hello_world/hello_world.zip')
+            handler='main.my_handler', runtime=runtime, codeZipFile='test/hello_world/hello_world.zip')
         self.client.create_function(
             self.serviceName, prefix + 'zzz',
-            handler='main.my_handler', runtime='python2.7', codeZipFile='test/hello_world/hello_world.zip')
+            handler='main.my_handler', runtime=runtime, codeZipFile='test/hello_world/hello_world.zip')
 
         r = self.client.list_functions(self.serviceName, limit=2, startKey=prefix + 'b')
+        r = r.data
         functions = r['functions']
         nextToken = r['nextToken']
         self.assertEqual(len(functions), 2)
@@ -164,6 +173,7 @@ class TestFunction(unittest.TestCase):
         self.assertTrue(functions[1]['functionName'], prefix + 'bde')
 
         r = self.client.list_functions(self.serviceName, limit=1, startKey=prefix + 'b', nextToken=nextToken)
+        r = r.data
         functions = r['functions']
         self.assertEqual(len(functions), 1)
         self.assertTrue(functions[0]['functionName'], prefix + 'zzz')
@@ -171,16 +181,19 @@ class TestFunction(unittest.TestCase):
         # It's ok to omit the startKey and only provide continuationToken.
         # As long as the continuationToken is provided, the startKey is not considered.
         r = self.client.list_functions(self.serviceName, limit=1, nextToken=nextToken)
+        r = r.data
         functions = r['functions']
         self.assertEqual(len(functions), 1)
         self.assertTrue(functions[0]['functionName'], prefix + 'zzz')
 
         # If continuationToken is provided, along with a prefix, then the prefix is considered.
         r = self.client.list_functions(self.serviceName, limit=2, prefix=prefix + 'x', nextToken=nextToken)
+        r = r.data
         functions = r['functions']
         self.assertEqual(len(functions), 0)
 
         r = self.client.list_functions(self.serviceName, limit=2, prefix=prefix + 'a')
+        r = r.data
         functions = r['functions']
         self.assertEqual(len(functions), 2)
         self.assertTrue(functions[0]['functionName'], prefix + 'abc')
@@ -188,6 +201,7 @@ class TestFunction(unittest.TestCase):
 
         # list functions with prefix and startKey
         r = self.client.list_functions(self.serviceName, limit=2, prefix=prefix + 'ab', startKey=prefix + 'abd')
+        r = r.data
         functions = r['functions']
         self.assertEqual(len(functions), 1)
         self.assertTrue(functions[0]['functionName'], prefix + 'abd')
@@ -199,10 +213,12 @@ class TestFunction(unittest.TestCase):
             self.serviceName, helloWorld,
             handler='main.my_handler', runtime='python2.7', codeZipFile='test/hello_world/hello_world.zip')
         r = self.client.invoke_function(self.serviceName, helloWorld)
-        self.assertEqual(r.decode('utf-8'), 'hello world')
+        self.assertEqual(r.data.decode('utf-8'), 'hello world')
+
+        self.client.delete_function(self.serviceName, helloWorld)
 
         # read a image as invoke parameter.
-        imageProcess = 'test_invoke_hello_world_' + ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
+        imageProcess = 'test_invoke_nodejs_image_resize'
         logging.info('create function: {0}'.format(imageProcess))
         self.client.create_function(
             self.serviceName, imageProcess,
@@ -210,13 +226,10 @@ class TestFunction(unittest.TestCase):
         sourceImage = open('test/image_process/data/serverless.png', 'rb')
         destImage = open('/tmp/serverless.png', 'wb')
         r = self.client.invoke_function(self.serviceName, imageProcess, payload=sourceImage)
-        destImage.write(r)
+        destImage.write(r.data)
         sourceImage.close()
         destImage.close()
-
         self.assertEqual(imghdr.what('/tmp/serverless.png'), 'png')
-
-        self.client.delete_function(self.serviceName, helloWorld)
         self.client.delete_function(self.serviceName, imageProcess)
 
     def test_sts(self):
@@ -235,17 +248,18 @@ class TestFunction(unittest.TestCase):
         request.set_RoleSessionName('fc-python-sdk')
         response = sts_client.do_action_with_exception(request)
         resp = json.loads(response)
-        client = fc.Client(
+        client = fc2.Client(
             endpoint=os.environ['ENDPOINT'],
             accessKeyID=resp['Credentials']['AccessKeyId'],
             accessKeySecret=resp['Credentials']['AccessKeySecret'],
             securityToken=resp['Credentials']['SecurityToken'],
         )
         r = client.invoke_function(self.serviceName, helloWorld)
-        self.assertEqual(r.decode('utf-8'), 'hello world')
+        self.assertEqual(r.data.decode('utf-8'), 'hello world')
+        self.client.delete_function(self.serviceName, helloWorld)
 
     def test_fc_error_code(self):
-        with self.assertRaises(fc.FcError) as cm:
+        with self.assertRaises(fc2.FcError) as cm:
             self.client.invoke_function(self.serviceName, "undefine_function")
 
         self.assertIn('RequestId', cm.exception.message)
