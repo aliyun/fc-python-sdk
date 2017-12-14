@@ -1,8 +1,8 @@
 Aliyun FunctionCompute Python SDK
 =================================
 
-.. image:: https://badge.fury.io/py/aliyun-fc.svg
-    :target: https://badge.fury.io/py/aliyun-fc
+.. image:: https://badge.fury.io/py/aliyun-fc2.svg
+    :target: https://badge.fury.io/py/aliyun-fc2
 .. image:: https://travis-ci.org/aliyun/fc-python-sdk.svg?branch=master
     :target: https://travis-ci.org/aliyun/fc-python-sdk
 .. image:: https://coveralls.io/repos/github/aliyun/fc-python-sdk/badge.svg?branch=master
