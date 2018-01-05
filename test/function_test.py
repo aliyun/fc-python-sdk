@@ -269,5 +269,27 @@ class TestFunction(unittest.TestCase):
         self.assertEqual('FunctionNotFound', cm.exception.err_code)
         self.assertNotEqual('', cm.exception.request_id)
 
+
+    def test_check_op_function_param_check(self):
+        functionName= 'test_create_' + ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
+        desc = u'这是测试function'
+        logging.info('Create function: {0}'.format(functionName))
+
+        with self.assertRaises(Exception):
+            function = self.client.create_function(
+                self.serviceName, functionName,
+                handler='main.my_handler', runtime='python2.7', codeDir=None, description=desc)
+        
+        with self.assertRaises(Exception):
+            function = self.client.create_function(
+                self.serviceName, functionName,
+                handler='main.my_handler', runtime='python2.7', codeZipFile='test/hello_world/hello_world.zip' , codeDir='test/hello_world', description=desc)
+        
+        with self.assertRaises(Exception):
+            function = self.client.create_function(
+                self.serviceName, functionName,
+                handler='main.my_handler', runtime='python2.7', codeOSSBucket='test-bucket' ,  description=desc)
+
+
 if __name__ == '__main__':
     unittest.main()
