@@ -273,6 +273,25 @@ class Client(object):
         r = self._do_request(method, path, headers, params=params)
         return FcHttpResponse(r.headers, r.json())
 
+    def _check_function_param_valid(self, codeZipFile, codeDir, codeOSSBucket, codeOSSObject):
+        code_d = {}
+        if codeZipFile:
+            code_d['codeZipFile'] = codeZipFile
+        if codeDir:
+            code_d['codeDir'] = codeDir
+        if codeOSSBucket:
+            if not codeOSSObject:
+                raise Exception('codeOSSBucket and codeOSSObject must to exist at the same time')
+            code_d['oss'] = (codeOSSBucket, codeOSSObject)
+
+        if len(code_d) == 0:
+            raise Exception('codeZipFile, codeDir, (codeOSSBucket, codeOSSObject) , these three parameters must have an assignment')
+
+        if len(code_d) > 1: 
+            raise Exception('codeZipFile, codeDir, (codeOSSBucket, codeOSSObject) , these three parameters need only one paramet$er assignment')
+
+        return True
+
     def create_function(
             self, serviceName, functionName, runtime, handler,
             codeZipFile=None, codeDir=None, codeOSSBucket=None, codeOSSObject=None,
@@ -310,6 +329,8 @@ class Client(object):
             'timeout': 60,                // in second
         }
         """
+        self._check_function_param_valid(codeZipFile, codeDir, codeOSSBucket, codeOSSObject)
+
         method = 'POST'
         path = '/{0}/services/{1}/functions'.format(self.api_version, serviceName)
         headers = self._build_common_headers(method, path, headers)
@@ -537,7 +558,6 @@ class Client(object):
         :param traceId: (optional, string) a uuid to do the request tracing.
         :param headers: (optional, dict) user-defined request header. 
                             'x-fc-invocation-type' : require, 'Sync'/'Async' ,only two choice
-                            'x-fc-trace-id' : require, default is 'None'
                             'x-fc-trace-id' : option
                             # other can add user define header
         :return: function output FcHttpResponse object.
