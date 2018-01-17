@@ -97,7 +97,7 @@ Getting started
 
     # Create function.
     # the current directory has a main.zip file (main.py which has a function of myhandler)
-    client.create_function('service_name', 'function_name', 'main.my_handler', codeZipFile = 'main.zip')
+    client.create_function('service_name', 'function_name', 'python3',  'main.my_handler', codeZipFile = 'main.zip')
 
     # Invoke function synchronously.
     client.invoke_function('service_name', 'function_name')

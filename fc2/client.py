@@ -13,6 +13,7 @@ from . import fc_exceptions
 import platform
 
 
+
 class Client(object):
     def __init__(self, **kwargs):
         endpoint = kwargs.get('endpoint', None)
@@ -292,6 +293,7 @@ class Client(object):
 
         return True
 
+
     def create_function(
             self, serviceName, functionName, runtime, handler,
             codeZipFile=None, codeDir=None, codeOSSBucket=None, codeOSSObject=None,
@@ -329,6 +331,13 @@ class Client(object):
             'timeout': 60,                // in second
         }
         """
+        serviceName, functionName, runtime, handler, memorySize, timeout = \
+             str(serviceName), str(functionName), str(runtime), str(handler), int(memorySize), int(timeout)
+
+        codeZipFile = str(codeZipFile) if codeZipFile else codeZipFile
+        codeDir = str(codeDir) if codeDir else codeDir
+        codeOSSBucket = str(codeOSSBucket) if codeOSSBucket else codeOSSBucket
+        codeOSSObject = str(codeOSSObject) if codeOSSObject else codeOSSObject
         self._check_function_param_valid(codeZipFile, codeDir, codeOSSBucket, codeOSSObject)
 
         method = 'POST'
@@ -362,7 +371,7 @@ class Client(object):
         r = self._do_request(method, path, headers, body=json.dumps(payload).encode('utf-8'))
         # 'etag' now in headers
         return FcHttpResponse(r.headers, r.json())
-
+    
     def update_function(
             self, serviceName, functionName,
             codeZipFile=None, codeDir=None, codeOSSBucket=None, codeOSSObject=None,
@@ -403,6 +412,16 @@ class Client(object):
             'timeout': 60,                // in second
         }
         """
+        serviceName, functionName = str(serviceName), str(functionName)
+        handler = str(handler) if handler else handler
+        runtime = str(runtime) if runtime else runtime
+        memorySize = int(memorySize) if memorySize else memorySize
+        timeout = int(timeout) if timeout else timeout
+        codeZipFile = str(codeZipFile) if codeZipFile else codeZipFile
+        codeDir = str(codeDir) if codeDir else codeDir
+        codeOSSBucket = str(codeOSSBucket) if codeOSSBucket else codeOSSBucket
+        codeOSSObject = str(codeOSSObject) if codeOSSObject else codeOSSObject
+
         method = 'PUT'
         path = '/{0}/services/{1}/functions/{2}'.format(self.api_version, serviceName, functionName)
         headers = self._build_common_headers(method, path, headers)
