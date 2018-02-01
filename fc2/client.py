@@ -575,6 +575,160 @@ class Client(object):
 
         return FcHttpResponse(r.headers, r.content)
 
+    def create_trigger(self, serviceName, functionName, triggerName, triggerType, triggerConfig, sourceArn, invocationRole, headers={}):
+        """
+        Create a trigger.
+        :param serviceName: (required, string), name of the service that the trigger belongs to.
+        :param functionName: (required, string), name of the function that the trigger belongs to.
+        :param triggerName: (required, string), name of the trigger.
+        :param triggerType: (required, string), the type of trigger. 'oss','log','timer'
+        :param triggerConfig: (required, string), the config of the trigger, different types of trigger has different config.
+        :param sourceArn: (required, string), Aliyun Resource Name（ARN）of the event.
+        :param invocationRole: (required, string), the role that event source uses to invoke the function.
+
+        :param headers, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, user define key value
+        :return: FcHttpResponse
+        headers: dict {'etag':'string', ...}
+        data: dict of the trigger attributes.
+        {
+            'createdTime': 'string',
+            'invocationRole': 'string',
+            'lastModifiedTime ': 'string',
+            'sourceArn': 'string',
+            'triggerConfig': 'dict',
+            'triggerName': 'string',
+            'triggerType': 'string',
+        }
+        """
+        method = 'POST'
+        path = '/{0}/services/{1}/functions/{2}/triggers'.format(self.api_version, serviceName, functionName)
+        headers = self._build_common_headers(method, path, headers)
+        payload = {'triggerName': triggerName, 'triggerType': triggerType, 'triggerConfig': triggerConfig, 'sourceArn': sourceArn, 'invocationRole': invocationRole}
+        r = self._do_request(method, path, headers, body=json.dumps(payload).encode('utf-8'))
+        return FcHttpResponse(r.headers, r.json())
+
+    def delete_trigger(self, serviceName, functionName, triggerName, headers={}):
+        """
+        Delete a trigger.
+        :param serviceName: (required, string), name of the service that the trigger belongs to.
+        :param functionName: (required, string), name of the function that the trigger belongs to.
+        :param triggerName: (required, string), name of the trigger.
+        :param headers, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, 'if-match': string (delete the trigger only when matched the given etag.)
+            3, user define key value
+        :return: None
+        """
+        method = 'DELETE'
+        path = '/{0}/services/{1}/functions/{2}/triggers/{3}'.format(self.api_version, serviceName, functionName, triggerName)
+        headers = self._build_common_headers(method, path, headers)
+        self._do_request(method, path, headers)
+
+    def update_trigger(self, serviceName, functionName, triggerName, triggerConfig=None, invocationRole=None, headers={}):
+        """
+        Update a trigger.
+        :param serviceName: (required, string), name of the service that the trigger belongs to.
+        :param functionName: (required, string), name of the function that the trigger belongs to.
+        :param triggerName: (required, string), name of the trigger.
+        :param triggerConfig: (optional, string), the config of the trigger, different types of trigger has different config.
+        :param invocationRole: (optional, string), the role that event source uses to invoke the function.
+
+        :param headers, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, 'if-match': string (update the trigger only when matched the given etag.)
+            3, user define key value
+        :return: FcHttpResponse
+        headers: dict {'etag':'string', ...}
+        data: dict of the trigger attributes.
+        {
+            'createdTime': 'string',
+            'invocationRole': 'string',
+            'lastModifiedTime ': 'string',
+            'sourceArn': 'string',
+            'triggerConfig': 'dict',
+            'triggerName': 'string',
+            'triggerType': 'string',
+        }
+        """
+        method = 'PUT'
+        path = '/{0}/services/{1}/functions/{2}/triggers/{3}'.format(self.api_version, serviceName, functionName, triggerName)
+        headers = self._build_common_headers(method, path, headers)
+        payload = {}
+        if triggerConfig:
+            payload['triggerConfig'] = triggerConfig
+        if invocationRole:
+            payload['invocationRole'] = invocationRole
+        r = self._do_request(method, path, headers, body=json.dumps(payload).encode('utf-8'))
+        return FcHttpResponse(r.headers, r.json())
+
+    def get_trigger(self, serviceName, functionName, triggerName, headers={}):
+        """
+        Get a trigger.
+        :param serviceName: (required, string), name of the service that the trigger belongs to.
+        :param functionName: (required, string), name of the function that the trigger belongs to.
+        :param triggerName: (required, string), name of the trigger.
+        :param headers, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, user define key value
+        :return: FcHttpResponse
+        headers: dict {'etag':'string', ...}
+        data: dict of the trigger attributes.
+        {
+            'createdTime': 'string',
+            'invocationRole': 'string',
+            'lastModifiedTime ': 'string',
+            'sourceArn': 'string',
+            'triggerConfig': 'dict',
+            'triggerName': 'string',
+            'triggerType': 'string',
+        }
+        """
+        method = 'GET'
+        path = '/{0}/services/{1}/functions/{2}/triggers/{3}'.format(self.api_version, serviceName, functionName, triggerName)
+        headers = self._build_common_headers(method, path, headers)
+        r = self._do_request(method, path, headers)
+        return FcHttpResponse(r.headers, r.json())
+
+    def list_triggers(self, serviceName, functionName, limit=None, nextToken=None, prefix=None, startKey=None, headers={}):
+        """
+        List the triggers of the specified function.
+        :param limit: (optional, integer) the total number of the returned triggerss.
+        :param nextToken: (optional, string) continue listing the triggers from the previous point.
+        :param prefix: (optional, string) list the triggers with the given prefix.
+        :param startKey: (optional, string) startKey is where you want to start listing from.
+        :param headers, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, user define key value
+        :return: FcHttpResponse
+        headers: dict
+        data: dict, including all function information.
+        {
+            'triggers':
+            [
+                {
+                    'createdTime': 'string',
+                    'invocationRole': 'string',
+                    'lastModifiedTime ': 'string',
+                    'sourceArn': 'string',
+                    'triggerConfig': 'dict',
+                    'triggerName': 'string',
+                    'triggerType': 'string',
+                },
+                ...
+            ],
+            'nextToken': 'string'
+        }
+        """
+        method = 'GET'
+        path = '/{0}/services/{1}/functions/{2}/triggers'.format(self.api_version, serviceName, functionName)
+        headers = self._build_common_headers(method, path, headers)
+        paramlst = [('limit', limit), ('prefix', prefix), ('nextToken', nextToken), ('startKey', startKey)]
+        params = dict((k, v) for k, v in paramlst if v)
+        r = self._do_request(method, path, headers, params=params)
+        return FcHttpResponse(r.headers, r.json())
+
 class FcHttpResponse(object):
     def __init__(self, headers, data):
         self._headers = headers
