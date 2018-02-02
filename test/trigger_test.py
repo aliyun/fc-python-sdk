@@ -92,7 +92,6 @@ class TestService(unittest.TestCase):
         logging.info('create trigger: {0}'.format(trigger_name))
         create_trigger_resp = self.client.create_trigger(service_name, function_name, trigger_name, trigger_type,
                                                          trigger_config, source_arn, invocation_role).data
-        print create_trigger_resp['triggerConfig']
         self.check_trigger_response(create_trigger_resp, trigger_name, trigger_type, trigger_config, source_arn,
                                     invocation_role)
         # 404
@@ -197,8 +196,6 @@ class TestService(unittest.TestCase):
         logging.info('create trigger: {0}'.format(trigger_name))
         create_trigger_resp = self.client.create_trigger(service_name, function_name, trigger_name, trigger_type,
                                                          trigger_config, source_arn, invocation_role).data
-        print create_trigger_resp['triggerConfig']
-        print trigger_config
         self.check_trigger_response(create_trigger_resp, trigger_name, trigger_type, trigger_config, source_arn,
                                     invocation_role)
 
