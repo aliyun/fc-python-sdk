@@ -263,6 +263,5 @@ class TestService(unittest.TestCase):
         self.assertTrue('lastModifiedTime' in resp)
         self.assertTrue('triggerConfig' in resp)
 
-
 if __name__ == '__main__':
     unittest.main()
