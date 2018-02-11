@@ -33,6 +33,8 @@ We suggest using fc2, The main difference between fc and fc2 is:
             headers = {'x-fc-invocation-type': 'Sync', 'x-fc-log-type' : 'None'}):                                           
         ...
 
+Attention: abandon async_invoke_function, there is only one function interface invoke_function, distinguish between synchronous and asynchronous by x-fc-invocation-type parameters.
+
 
 2, The all http response returned by the user is the following object
 
