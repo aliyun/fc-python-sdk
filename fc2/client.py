@@ -601,9 +601,9 @@ class Client(object):
         :param functionName: (required, string), name of the function that the trigger belongs to.
         :param triggerName: (required, string), name of the trigger.
         :param triggerType: (required, string), the type of trigger. 'oss','log','timer'
-        :param triggerConfig: (required, string), the config of the trigger, different types of trigger has different config.
-        :param sourceArn: (required, string), Aliyun Resource Name（ARN）of the event.
-        :param invocationRole: (required, string), the role that event source uses to invoke the function.
+        :param triggerConfig: (required, dict), the config of the trigger, different types of trigger has different config.
+        :param sourceArn: (optional, string), Aliyun Resource Name（ARN）of the event.In addition to timetrigger, other trigger parameters are required
+        :param invocationRole: (optional, string), the role that event source uses to invoke the function.In addition to timetrigger, other trigger parameters are required.
 
         :param headers, optional
             1, 'x-fc-trace-id': string (a uuid to do the request tracing)
@@ -651,7 +651,7 @@ class Client(object):
         :param serviceName: (required, string), name of the service that the trigger belongs to.
         :param functionName: (required, string), name of the function that the trigger belongs to.
         :param triggerName: (required, string), name of the trigger.
-        :param triggerConfig: (optional, string), the config of the trigger, different types of trigger has different config.
+        :param triggerConfig: (optional, dict), the config of the trigger, different types of trigger has different config.
         :param invocationRole: (optional, string), the role that event source uses to invoke the function.
 
         :param headers, optional
