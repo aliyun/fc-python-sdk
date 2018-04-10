@@ -32,8 +32,11 @@ class TestFunction(unittest.TestCase):
         logging.info('Create function: {0}'.format(functionName))
         function = self.client.create_function(
             self.serviceName, functionName,
-            handler='main.my_handler', runtime='python2.7', codeDir='test/hello_world', description=desc)
-        self.check_function(function,functionName, desc, 'python2.7')
+            handler='main.my_handler', runtime='python2.7', codeDir='test/hello_world', description=desc, environmentVariables={'testKey': 'testValue'})
+        self.check_function(function, functionName, desc, 'python2.7')
+        function = function.data
+        self.assertEqual(function['environmentVariables']['testKey'], 'testValue')
+
 
     def check_function(self, function, functionName, desc, runtime = 'python2.7'):
         etag = function.headers['etag']
@@ -92,15 +95,15 @@ class TestFunction(unittest.TestCase):
         logging.info('Create function: {0}'.format(functionName))
         self.client.create_function(
             self.serviceName, functionName,
-            handler='main.my_handler', runtime='python2.7', codeDir='test/hello_world')
+            handler='main.my_handler', runtime='python2.7', codeDir='test/hello_world', environmentVariables={'testKey':'testValue'})
 
         desc = 'function description'
-        func = self.client.update_function(self.serviceName, functionName, codeDir='test/hello_world', description=desc)
+        func = self.client.update_function(self.serviceName, functionName, codeDir='test/hello_world', description=desc, environmentVariables={'testKey':'testValueNew'})
         etag = func.headers['etag']
         self.assertNotEqual(etag, '')
         func = func.data
         self.assertEqual(func['description'], desc)
-
+        self.assertEqual(func['environmentVariables']['testKey'], 'testValueNew')
         func = self.client.update_function(self.serviceName, functionName, codeZipFile='test/hello_world/hello_world.zip', description=desc)
         func = func.data
         self.assertEqual(func['description'], desc)
