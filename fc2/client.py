@@ -369,7 +369,7 @@ class Client(object):
         if timeout:
             payload['timeout'] = timeout
 
-        if environmentVariables:
+        if environmentVariables != None:
             payload['environmentVariables'] = environmentVariables
 
         r = self._do_request(method, path, headers, body=json.dumps(payload).encode('utf-8'))
