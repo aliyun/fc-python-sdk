@@ -13,18 +13,35 @@ import json
 from aliyunsdkcore import client as AliyunSDK
 from aliyunsdksts.request.v20150401 import AssumeRoleRequest
 
+
 class TestFunction(unittest.TestCase):
+    client = None
+    service_name = ""
+
     def __init__(self, *args, **kwargs):
         super(TestFunction, self).__init__(*args, **kwargs)
-        self.client = fc2.Client(
+
+    @classmethod
+    def setUpClass(cls):
+        logging.info("This setUpClass() method only called once.")
+        cls.client = fc2.Client(
             endpoint=os.environ['ENDPOINT'],
             accessKeyID=os.environ['ACCESS_KEY_ID'],
             accessKeySecret=os.environ['ACCESS_KEY_SECRET'],
         )
-        serviceName = 'TestFunction_service_' + ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
-        self.serviceName = serviceName
-        self.client.create_service(self.serviceName)
-        logging.info("create service: {0}".format(self.serviceName))
+        service_name = 'TestFunction_service_' + ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
+        cls.serviceName = service_name
+        cls.client.create_service(service_name)
+        logging.info("create service: {0}".format(service_name))
+
+    @classmethod
+    def tearDownClass(cls):
+        logging.info("This tearDownClass() method only called once too.")
+        service_name = cls.serviceName
+        r = cls.client.list_functions(cls.serviceName)
+        functions = r.data['functions']
+        assert len(functions)==0
+        cls.client.delete_service(service_name)
 
     def test_create(self):
         functionName= 'test_create_' + ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
@@ -116,8 +133,8 @@ class TestFunction(unittest.TestCase):
 
         self.client.delete_function(self.serviceName, functionName)
 
-    def test_list(self):
-        # Use the prefix to isolate the services.
+
+    def _clear_list_function(self):
         prefix = 'test_list_'
         # Cleanup the resources.
         try:
@@ -142,9 +159,14 @@ class TestFunction(unittest.TestCase):
             pass
         try:
             self.client.delete_function(self.serviceName, prefix + 'zzz')
-        except:
-            pass
+        except Exception as e:
+            logging.error("_clear_list_function error {}".format(str(e)))
 
+
+    def test_list(self):
+        self._clear_list_function()
+        # Use the prefix to isolate the services.
+        prefix = 'test_list_'
         runtime = 'python2.7'
 
         self.client.create_function(
@@ -208,6 +230,7 @@ class TestFunction(unittest.TestCase):
         functions = r['functions']
         self.assertEqual(len(functions), 1)
         self.assertTrue(functions[0]['functionName'], prefix + 'abd')
+        self._clear_list_function()
 
     def test_invoke(self):
         helloWorld= 'test_invoke_hello_world_' + ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
@@ -317,8 +340,6 @@ class TestFunction(unittest.TestCase):
             function = self.client.create_function(
                 self.serviceName, functionName,
                 handler='main.my_handler', runtime='python2.7', codeOSSBucket="hello", codeOSSObject=10, description=desc)
-            
-
 
 if __name__ == '__main__':
     unittest.main()

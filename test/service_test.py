@@ -70,8 +70,8 @@ class TestService(unittest.TestCase):
 
         self.client.delete_service(name)
 
-    def test_list(self):
-        # Use the prefix to isolate the services.
+    def _clear_list_service(self):
+         # Use the prefix to isolate the services.
         prefix = 'test_list_'
         # Cleanup the resources.
         try:
@@ -99,6 +99,10 @@ class TestService(unittest.TestCase):
         except:
             pass
 
+
+    def test_list(self):
+        self._clear_list_service()
+        prefix = 'test_list_'
         self.client.create_service(prefix + 'abc')
         self.client.create_service(prefix + 'abd')
         self.client.create_service(prefix + 'ade')
@@ -111,7 +115,6 @@ class TestService(unittest.TestCase):
         services = r['services']
         nextToken = r['nextToken']
         self.assertEqual(len(services), 2)
-        services = r['services']
         self.assertTrue(services[0]['serviceName'], prefix + 'bcd')
         self.assertTrue(services[1]['serviceName'], prefix + 'bde')
 
@@ -148,6 +151,7 @@ class TestService(unittest.TestCase):
         services = r['services']
         self.assertEqual(len(services), 1)
         self.assertTrue(services[0]['serviceName'], prefix + 'abd')
+        self._clear_list_service()
 
 
 if __name__ == '__main__':
