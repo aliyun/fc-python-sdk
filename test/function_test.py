@@ -49,8 +49,11 @@ class TestFunction(unittest.TestCase):
         logging.info('Create function: {0}'.format(functionName))
         function = self.client.create_function(
             self.serviceName, functionName,
-            handler='main.my_handler', runtime='python2.7', codeDir='test/hello_world', description=desc)
-        self.check_function(function,functionName, desc, 'python2.7')
+            handler='main.my_handler', runtime='python2.7', codeDir='test/hello_world', description=desc, environmentVariables={'testKey': 'testValue'})
+        self.check_function(function, functionName, desc, 'python2.7')
+        function = function.data
+        self.assertEqual(function['environmentVariables']['testKey'], 'testValue')
+
 
     def check_function(self, function, functionName, desc, runtime = 'python2.7'):
         etag = function.headers['etag']
@@ -109,28 +112,27 @@ class TestFunction(unittest.TestCase):
         logging.info('Create function: {0}'.format(functionName))
         self.client.create_function(
             self.serviceName, functionName,
-            handler='main.my_handler', runtime='python2.7', codeDir='test/hello_world')
-
+            handler='main.my_handler', runtime='python2.7', codeDir='test/hello_world', environmentVariables={'testKey0':'testValue0', 'testKey1':'testValue1'})
         desc = 'function description'
-        func = self.client.update_function(self.serviceName, functionName, codeDir='test/hello_world', description=desc)
+        func = self.client.update_function(self.serviceName, functionName, codeDir='test/hello_world', description=desc, environmentVariables={'newTestKey':'newTestValue'})
         etag = func.headers['etag']
         self.assertNotEqual(etag, '')
         func = func.data
         self.assertEqual(func['description'], desc)
-
+        self.assertEqual(func['environmentVariables'], {'newTestKey':'newTestValue'})
         func = self.client.update_function(self.serviceName, functionName, codeZipFile='test/hello_world/hello_world.zip', description=desc)
         func = func.data
         self.assertEqual(func['description'], desc)
-
+        self.assertEqual(func['environmentVariables'], {'newTestKey':'newTestValue'})
+        self.assertEqual(func['description'], desc)
+        func = self.client.update_function(self.serviceName, functionName, codeDir='test/hello_world', description=desc, environmentVariables={})
+        self.assertEqual(func.data['environmentVariables'], {})
         # expect the delete service failed because of invalid etag.
         with self.assertRaises(fc2.FcError):
             self.client.update_function(self.serviceName, functionName, description='invalid', headers ={'if-match':'invalid etag'})
 
         with self.assertRaises(Exception):
             self.client.update_function(self.serviceName, functionName, codeZipFile='test/hello_world/hello_world.zip', runtime = 10)
-
-        self.assertEqual(func['description'], desc)
-
         self.client.delete_function(self.serviceName, functionName)
 
 
