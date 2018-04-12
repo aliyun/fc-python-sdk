@@ -99,10 +99,55 @@ Getting started
 
     # Create function.
     # the current directory has a main.zip file (main.py which has a function of myhandler)
-    client.create_function('service_name', 'function_name', 'python3',  'main.my_handler', codeZipFile = 'main.zip')
+    # set environment variables {'testKey': 'testValue'}
+    client.create_function('service_name', 'function_name', 'python3',  'main.my_handler', codeZipFile = 'main.zip', environmentVariables = {'testKey': 'testValue'})
 
     # Invoke function synchronously.
     client.invoke_function('service_name', 'function_name')
+
+    # Create trigger
+    # Create oss trigger
+    oss_trigger_config = {
+            'events': ['oss:ObjectCreated:*'],
+            'filter': {
+                'key': {
+                    'prefix': 'prefix',
+                    'suffix': 'suffix'
+                }
+            }
+    }
+    source_arn = 'acs:oss:cn-shanghai:12345678:bucketName'
+    invocation_role = 'acs:ram::12345678:role/aliyunosseventnotificationrole'
+    client.create_trigger('service_name', 'function_name', 'trigger_name', 'oss',
+                                                         oss_trigger_config, source_arn, invocation_role)
+
+    # Create log trigger
+    log_trigger_config = {
+            'sourceConfig': {
+                'logstore': 'log_store_source'
+            },
+            'jobConfig': {
+                'triggerInterval': 60,
+                'maxRetryTime': 10
+            },
+            'functionParameter': {},
+            'logConfig': {
+                'project': 'log_project',
+                'logstore': 'log_store'
+            },
+            'enable': False
+    }
+    source_arn = 'acs:log:cn-shanghai:12345678:project/log_project'
+    invocation_role = 'acs:ram::12345678:role/aliyunlogetlrole'
+    client.create_trigger('service_name', 'function_name', 'trigger_name', 'oss',
+                                                         log_trigger_config, source_arn, invocation_role)
+    # Create time trigger
+    time_trigger_config = {
+            'payload': 'awesome-fc'
+            'cronExpression': '0 5 * * * *'
+            'enable': true
+    }
+    client.create_trigger('service_name', 'function_name', 'trigger_name', 'timer', time_trigger_config, '', '')
 
     # Invoke a function with a input parameter.
     client.invoke_function('service_name', 'function_name', payload=bytes('hello_world'))
