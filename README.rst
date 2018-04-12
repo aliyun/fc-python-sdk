@@ -141,7 +141,6 @@ Getting started
     invocation_role = 'acs:ram::12345678:role/aliyunlogetlrole'
     client.create_trigger('service_name', 'function_name', 'trigger_name', 'oss',
                                                          log_trigger_config, source_arn, invocation_role)
-
     # Create time trigger
     time_trigger_config = {
             'payload': 'awesome-fc'
