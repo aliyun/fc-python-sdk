@@ -9,9 +9,15 @@ import json
 from . import __version__
 from . import auth
 from . import util
-from . import fc_exceptions 
+from . import fc_exceptions
 import platform
+import sys
 
+_ver = sys.version_info
+if _ver[0] == 2:
+    from urllib import unquote as unescape
+elif _ver[0] == 3:
+    from urllib.parse import unquote as unescape
 
 
 class Client(object):
@@ -53,7 +59,7 @@ class Client(object):
 
         return endpoint.strip()
 
-    def _build_common_headers(self, method, path, customHeaders = {}):
+    def _build_common_headers(self, method, path, customHeaders = {}, unescaped_queries=None):
         headers = {
             'host': self.host,
             'date': email.utils.formatdate(usegmt=True),
@@ -68,9 +74,17 @@ class Client(object):
             headers.update(customHeaders)
 
          # Sign the request and set the signature to headers.
-        headers['authorization'] = self.auth.sign_request(method, path, headers)
+        headers['authorization'] = self.auth.sign_request(method, path, headers, unescaped_queries)
 
         return headers
+
+    def do_http_request(self, method, serviceName, functionName, path, headers={}, params=None, body=None):
+        path = '/{0}/proxy/{1}/{2}/{3}'.format(self.api_version, serviceName, functionName, path)
+        url = '{0}{1}'.format(self.endpoint, path)
+        headers = self._build_common_headers(method, unescape(path), headers, params)
+        logging.debug('Do http request. Method: {0}. URL: {1}. Params: {2}. Headers: {3}'.format(method, url, params, headers))
+        r = requests.request(method, url, headers=headers, params=params, data=body, timeout=self.timeout)
+        return r
 
     def _do_request(self, method, path, headers, params=None, body=None):
         url = '{0}{1}'.format(self.endpoint, path)
@@ -145,7 +159,7 @@ class Client(object):
             payload['role'] = role
 
         r = self._do_request(method, path, headers, body=json.dumps(payload).encode('utf-8'))
-       # 'etag' now in headers 
+       # 'etag' now in headers
         return FcHttpResponse(r.headers, r.json())
 
     def delete_service(self, serviceName, headers={}):
@@ -288,7 +302,7 @@ class Client(object):
         if len(code_d) == 0:
             raise Exception('codeZipFile, codeDir, (codeOSSBucket, codeOSSObject) , these three parameters must have an assignment')
 
-        if len(code_d) > 1: 
+        if len(code_d) > 1:
             raise Exception('codeZipFile, codeDir, (codeOSSBucket, codeOSSObject) , these three parameters need only one paramet$er assignment')
 
         return True
@@ -375,7 +389,7 @@ class Client(object):
         r = self._do_request(method, path, headers, body=json.dumps(payload).encode('utf-8'))
         # 'etag' now in headers
         return FcHttpResponse(r.headers, r.json())
-    
+
     def update_function(
             self, serviceName, functionName,
             codeZipFile=None, codeDir=None, codeOSSBucket=None, codeOSSObject=None,
@@ -399,7 +413,7 @@ class Client(object):
         :param headers, optional
             1, 'x-fc-trace-id': string (a uuid to do the request tracing)
             2, 'if-match': string (update the function only when matched the given etag.)
-            3, user define key value      
+            3, user define key value
         :return: FcHttpResponse
         headers: dict {'etag':'string', ...}
         data: dict of the function attributes.
@@ -476,7 +490,7 @@ class Client(object):
         :param headers, optional
             1, 'x-fc-trace-id': string (a uuid to do the request tracing)
             2, 'if-match': string (delete the function only when matched the given etag.)
-            3, user define key value  
+            3, user define key value
         :return: None
         """
         method = 'DELETE'
@@ -492,7 +506,7 @@ class Client(object):
         :param functionName: (required, string) name of the function.
         :param headers, optional
             1, 'x-fc-trace-id': string (a uuid to do the request tracing)
-            2, user define key value  
+            2, user define key value
         :return: FcHttpResponse
         headers: dict {'etag':'string', ...}
         data: dict function configuration.
@@ -512,7 +526,7 @@ class Client(object):
         :param functionName: (required, string) name of the function.
         :param headers, optional
             1, 'x-fc-trace-id': string (a uuid to do the request tracing)
-            2, user define key value  
+            2, user define key value
         :return: FcHttpResponse
         headers: dict
         data: dict, including function code information.
@@ -574,7 +588,7 @@ class Client(object):
 
 
     def invoke_function(self, serviceName, functionName, payload=None, headers = {}):
-                                                           
+
         """
         Invoke the function synchronously or asynchronously., default is synchronously.
         :param serviceName: (required, string) the name of the service.
@@ -583,7 +597,7 @@ class Client(object):
         :param logType: (optional, string) 'None' or 'Tail'. When invoke a function synchronously,
         you can set the log type to 'Tail' to get the last 4KB base64-encoded function log.
         :param traceId: (optional, string) a uuid to do the request tracing.
-        :param headers: (optional, dict) user-defined request header. 
+        :param headers: (optional, dict) user-defined request header.
                             'x-fc-invocation-type' : require, 'Sync'/'Async' ,only two choice
                             'x-fc-trace-id' : option
                             # other can add user define header
