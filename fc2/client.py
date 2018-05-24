@@ -117,7 +117,7 @@ class Client(object):
         err_msg = json.dumps(err_d)
         return fc_exceptions.get_fc_error(err_msg, r.status_code, err_code, err_d['RequestId'])
 
-    def create_service(self, serviceName, description=None, logConfig=None, role=None, headers={}):
+    def create_service(self, serviceName, description=None, logConfig=None, role=None, headers={}, internetAccess=None, vpcConfig=None):
         """
         Create a service.
         :param serviceName: name of the service.
@@ -131,6 +131,13 @@ class Client(object):
         your function to access any other Aliyun resources.
         For more information, see: https://help.aliyun.com/document_detail/52885.html
         :param headers, oprional, 'x-fc-trace-id': string (a uuid to do the request tracing), etc
+        :param internetAccess, optional, the ability to access the internet, default true, you can set it false if you would like to disable the internet access
+        :param vpcConfig, (optional, dict), vpc configuration
+        {
+            "vpcId": "string",
+            "vSwitchIds": [ "string" ],
+            "securityGroupId": "string"
+        }
         :param traceId:(optional, string) a uuid to do the request tracing.
         :return: FcHttpResponse
         headers: dict {'etag':'string', ...}
@@ -157,6 +164,10 @@ class Client(object):
             payload['logConfig'] = logConfig
         if role:
             payload['role'] = role
+        if vpcConfig:
+            payload['vpcConfig'] = vpcConfig
+        if internetAccess != None:
+            payload['internetAccess'] = internetAccess
 
         r = self._do_request(method, path, headers, body=json.dumps(payload).encode('utf-8'))
        # 'etag' now in headers
@@ -178,7 +189,7 @@ class Client(object):
 
         self._do_request(method, path, headers)
 
-    def update_service(self, serviceName, description=None, logConfig=None, role=None, headers={}):
+    def update_service(self, serviceName, description=None, logConfig=None, role=None, headers={}, internetAccess=None, vpcConfig=None ):
         """
         Update the service attributes.
         :param serviceName: name of the service.
@@ -195,6 +206,13 @@ class Client(object):
             1, 'x-fc-trace-id': string (a uuid to do the request tracing)
             2, 'if-match': string (update the service only when matched the given etag.)
             3, user define key value
+        :param internetAccess, optional, the ability to access the internet, default true, you can set it false if you would like to disable the internet access
+        :param vpcConfig, (optional, dict), vpc configuration
+        {
+            "vpcId": "string",
+            "vSwitchIds": [ "string" ],
+            "securityGroupId": "string"
+        }
         :return: FcHttpResponse
         headers: dict {'etag':'string', ...}
         data:dict. For more information, see: https://help.aliyun.com/document_detail/52877.html#createservice
@@ -222,6 +240,10 @@ class Client(object):
             payload['logConfig'] = logConfig
         if role:
             payload['role'] = role
+        if internetAccess != None:
+            payload['internetAccess'] = internetAccess
+        if vpcConfig:
+            payload['vpcConfig'] = vpcConfig
 
         r = self._do_request(method, path, headers, body=json.dumps(payload).encode('utf-8'))
         # 'etag' now in headers

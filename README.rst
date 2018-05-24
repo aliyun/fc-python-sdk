@@ -97,6 +97,18 @@ Getting started
     # Create service.
     client.create_service('service_name')
 
+    # set vpc config when creating the service
+    vpcConfig = {
+            'vpcId': '<Your Vpc Id>',
+            'vSwitchIds': '<[Your VSwitch Ids]>',
+            'securityGroupId': '<Your Security Group Id>'
+    }
+
+    # create vpcConfig when creating the service
+    # you have to set the role if you want to set vpc config
+    vpc_role = 'acs:ram::12345678:role/aliyunvpcrole'
+    service = self.client.create_service(name, role=vpc_role,  vpcConfig=vpcConfig)
+
     # Create function.
     # the current directory has a main.zip file (main.py which has a function of myhandler)
     # set environment variables {'testKey': 'testValue'}
