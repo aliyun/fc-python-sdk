@@ -19,5 +19,17 @@ class TestAuth(unittest.TestCase):
         sign_resource = fc2.auth.Auth._get_sign_resource('/path/action with-escaped~chars_here.ext', queries)
         self.assertEqual(sign_resource, '/path/action with-escaped~chars_here.ext\nfoo=bar\nkey1=abc\nkey1=xyz\nkey2=123\nkey3\nkey4-with /escaped~chars_here.ext=value-with /escaped~chars_here.ext')
 
+    def test_empty_queries(self):
+        sign_resource = fc2.auth.Auth._get_sign_resource('/path/action with-escaped~chars_here.ext', {})
+        self.assertEqual(sign_resource, '/path/action with-escaped~chars_here.ext\n')
+
+    def test_error_type_queries(self):
+        with self.assertRaises(TypeError):
+            fc2.auth.Auth._get_sign_resource('/path/action with-escaped~chars_here.ext', False)
+
+        with self.assertRaises(TypeError):
+            sign_resource = fc2.auth.Auth._get_sign_resource('/path/action with-escaped~chars_here.ext', None)
+            self.assertEqual(sign_resource, '/path/action with-escaped~chars_here.ext')
+
 if __name__ == '__main__':
     unittest.main()

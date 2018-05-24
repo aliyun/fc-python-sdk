@@ -8,7 +8,7 @@ def wsgi_echo_handler(environ, start_response):
     method = environ['REQUEST_METHOD']
     request_uri = environ['fc.request_uri']
     client_ip =environ['REMOTE_ADDR']
-    query_string = environ['QUERY_STRING']
+    query_string = environ.get('QUERY_STRING', '')
     ctx = environ["fc.context"]
     rfile = environ['wsgi.input']
     length = int(environ['CONTENT_LENGTH'])
