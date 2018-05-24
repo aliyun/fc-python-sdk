@@ -4,6 +4,7 @@ import requests
 import hashlib
 import hmac
 import base64
+import logging
 
 class Auth(object):
     def __init__(self, access_key_id, access_key_secret, security_token=""):
@@ -28,16 +29,19 @@ class Auth(object):
         date = headers.get('date', '')
         canonical_headers = Auth._build_canonical_headers(headers)
         canonical_resource = unescaped_path
-        if unescaped_queries:
+        if isinstance(unescaped_queries, dict):
             canonical_resource = Auth._get_sign_resource(unescaped_path, unescaped_queries)
         string_to_sign = '\n'.join(
             [method.upper(), content_md5, content_type, date, canonical_headers + canonical_resource])
+        logging.debug('string to sign:{0}'.format(string_to_sign))
         h = hmac.new(self.secret.encode('utf-8'), string_to_sign.encode('utf-8'), hashlib.sha256)
         signature = 'FC ' + self.id + ':' + base64.b64encode(h.digest()).decode('utf-8')
         return signature
 
     @staticmethod
     def _get_sign_resource(unescaped_path, unescaped_queries):
+        if not isinstance(unescaped_queries, dict):
+            raise TypeError("`dict` type required for queries")
         params = []
         for key, values in unescaped_queries.items():
             if isinstance(values, str):

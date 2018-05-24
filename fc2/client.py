@@ -79,7 +79,10 @@ class Client(object):
         return headers
 
     def do_http_request(self, method, serviceName, functionName, path, headers={}, params=None, body=None):
-        path = '/{0}/proxy/{1}/{2}/{3}'.format(self.api_version, serviceName, functionName, path)
+        params = {} if params is None else params
+        if not isinstance(params, dict):
+            raise TypeError('`None` or `dict` required for params')
+        path = '/{0}/proxy/{1}/{2}{3}'.format(self.api_version, serviceName, functionName, path if path != "" else "/")
         url = '{0}{1}'.format(self.endpoint, path)
         headers = self._build_common_headers(method, unescape(path), headers, params)
         logging.debug('Do http request. Method: {0}. URL: {1}. Params: {2}. Headers: {3}'.format(method, url, params, headers))

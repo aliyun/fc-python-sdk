@@ -242,9 +242,15 @@ class TestService(unittest.TestCase):
                 'key with space': 'value with space',
                 'key': 'value',
         }
-        r = self.client.do_http_request('POST', service_name, function_name, 'action%20with%20space', headers=headers, params=params, body='hello world')
+        r = self.client.do_http_request('POST', service_name, function_name, '/action%20with%20space', headers=headers, params=params, body='hello world')
         self.assertEqual(r.status_code, 202)
         self.assertEqual(json.loads(r.content).get('body'), 'hello world')
+
+        r = self.client.do_http_request('GET', service_name, function_name, '/')
+        self.assertEqual(r.status_code, 202)
+
+        with self.assertRaises(TypeError):
+            self.client.do_http_request('GET', service_name, function_name, '/', params=123)
 
         # 404 service not found
         with self.assertRaises(fc2.FcError):
