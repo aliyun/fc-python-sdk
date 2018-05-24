@@ -1,3 +1,7 @@
+## Version 2.0.7
+
+* fix bug for auth signature
+
 ## Version 2.0.6
 
 * add queries param to signature
