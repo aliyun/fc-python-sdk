@@ -13,6 +13,10 @@ import os
 class TestService(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super(TestService, self).__init__(*args, **kwargs)
+        self.vpcId = os.environ['VPC_ID']
+        self.vSwitchIds = os.environ['VSWITCH_IDS']
+        self.securityGroupId = os.environ['SECURITY_GROUP_ID']
+        self.vpcRole = os.environ['VPC_ROLE']
         self.client = fc2.Client(
             endpoint=os.environ['ENDPOINT'],
             accessKeyID=os.environ['ACCESS_KEY_ID'],
@@ -69,6 +73,47 @@ class TestService(unittest.TestCase):
         self.assertEqual(service.data['description'], desc)
 
         self.client.delete_service(name)
+
+    def test_vpcConfig(self):
+        name = 'test_vpcConfig'
+        try:
+            self.client.delete_service(name)
+        except:
+            pass
+        vpcConfig = {
+            'vpcId': self.vpcId,
+            'vSwitchIds': [self.vSwitchIds],
+            'securityGroupId': self.securityGroupId
+        }
+
+        # create vpcConfig when creating the service
+        logging.info('Create service: {0}'.format(name))
+        service = self.client.create_service(name, role=self.vpcRole,  vpcConfig=vpcConfig)
+        service = service.data
+        self.assertEqual(service['serviceName'], name)
+        self.assertTrue('createdTime' in service)
+        self.assertTrue('lastModifiedTime' in service)
+        self.assertTrue('logConfig' in service)
+        self.assertTrue('role' in service)
+        self.assertTrue('serviceId' in service)
+        self.assertEqual(service['internetAccess'], True)
+        self.assertEqual(service['vpcConfig']['vpcId'], self.vpcId)
+        self.assertEqual(service['vpcConfig']['vSwitchIds'], [self.vSwitchIds])
+        self.assertEqual(service['vpcConfig']['securityGroupId'], self.securityGroupId)
+
+        # update service
+        service = self.client.update_service(name, internetAccess=False).data
+        self.assertEqual(service['internetAccess'], False)
+        self.client.delete_service(name)
+
+        # create vpcConfig for an exist service
+        service = self.client.create_service(name).data
+        self.assertEqual(service['internetAccess'], True)
+        service = self.client.update_service(name, role=self.vpcRole, vpcConfig=vpcConfig).data
+        self.assertEqual(service['internetAccess'], True)
+        self.assertEqual(service['vpcConfig']['vpcId'], self.vpcId)
+        self.assertEqual(service['vpcConfig']['vSwitchIds'], [self.vSwitchIds])
+        self.assertEqual(service['vpcConfig']['securityGroupId'], self.securityGroupId)
 
     def _clear_list_service(self):
          # Use the prefix to isolate the services.
