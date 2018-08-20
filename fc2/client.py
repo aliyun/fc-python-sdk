@@ -1,17 +1,19 @@
 # -*- coding: utf-8 -*-
 
 import base64
-import requests
-import logging
 import email
 import io
 import json
-from . import __version__
-from . import auth
-from . import util
-from . import fc_exceptions
+import logging
 import platform
 import sys
+
+import requests
+
+from . import __version__
+from . import auth
+from . import fc_exceptions
+from . import util
 
 _ver = sys.version_info
 if _ver[0] == 2:
@@ -120,7 +122,7 @@ class Client(object):
         err_msg = json.dumps(err_d)
         return fc_exceptions.get_fc_error(err_msg, r.status_code, err_code, err_d['RequestId'])
 
-    def create_service(self, serviceName, description=None, logConfig=None, role=None, headers={}, internetAccess=None, vpcConfig=None):
+    def create_service(self, serviceName, description=None, logConfig=None, role=None, headers={}, internetAccess=None, vpcConfig=None, nasConfig=None):
         """
         Create a service.
         :param serviceName: name of the service.
@@ -140,6 +142,17 @@ class Client(object):
             "vpcId": "string",
             "vSwitchIds": [ "string" ],
             "securityGroupId": "string"
+        }
+        :param nasConfig, (optional, dict), nas configuration
+        {
+            "userId": int,
+            "groupId": int,
+            "mountPoints": [
+                {
+                    "serverAddr" : string,
+                    "mountDir" : string
+                }
+             ],
         }
         :param traceId:(optional, string) a uuid to do the request tracing.
         :return: FcHttpResponse
@@ -171,6 +184,8 @@ class Client(object):
             payload['vpcConfig'] = vpcConfig
         if internetAccess != None:
             payload['internetAccess'] = internetAccess
+        if nasConfig:
+            payload['nasConfig'] = nasConfig
 
         r = self._do_request(method, path, headers, body=json.dumps(payload).encode('utf-8'))
        # 'etag' now in headers
@@ -192,7 +207,7 @@ class Client(object):
 
         self._do_request(method, path, headers)
 
-    def update_service(self, serviceName, description=None, logConfig=None, role=None, headers={}, internetAccess=None, vpcConfig=None ):
+    def update_service(self, serviceName, description=None, logConfig=None, role=None, headers={}, internetAccess=None, vpcConfig=None, nasConfig=None):
         """
         Update the service attributes.
         :param serviceName: name of the service.
@@ -215,6 +230,17 @@ class Client(object):
             "vpcId": "string",
             "vSwitchIds": [ "string" ],
             "securityGroupId": "string"
+        }
+        :param nasConfig, (optional, dict), nas configuration
+        {
+            "userId": int,
+            "groupId": int,
+            "mountPoints": [
+                {
+                    "serverAddr" : string,
+                    "mountDir" : string
+                }
+             ],
         }
         :return: FcHttpResponse
         headers: dict {'etag':'string', ...}
@@ -247,6 +273,8 @@ class Client(object):
             payload['internetAccess'] = internetAccess
         if vpcConfig:
             payload['vpcConfig'] = vpcConfig
+        if nasConfig:
+            payload['nasConfig'] = nasConfig
 
         r = self._do_request(method, path, headers, body=json.dumps(payload).encode('utf-8'))
         # 'etag' now in headers

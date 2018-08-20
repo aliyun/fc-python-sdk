@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
-import fc2
 import logging
+import os
 import random
-import requests
 import string
 import unittest
 import uuid
-import os
+
+import fc2
 
 
 class TestService(unittest.TestCase):
@@ -17,6 +17,10 @@ class TestService(unittest.TestCase):
         self.vSwitchIds = os.environ['VSWITCH_IDS']
         self.securityGroupId = os.environ['SECURITY_GROUP_ID']
         self.vpcRole = os.environ['VPC_ROLE']
+        self.userId = os.environ['USER_ID']
+        self.groupId = os.environ['GROUP_ID']
+        self.nasServerAddr = os.environ['NAS_SERVER_ADDR']
+        self.nasMountDir = os.environ['NAS_MOUNT_DIR']
         self.client = fc2.Client(
             endpoint=os.environ['ENDPOINT'],
             accessKeyID=os.environ['ACCESS_KEY_ID'],
@@ -39,18 +43,18 @@ class TestService(unittest.TestCase):
         self.assertTrue('logConfig' in service)
         self.assertTrue('role' in service)
         self.assertTrue('serviceId' in service)
-       
-        service = self.client.get_service(name, headers ={'x-fc-trace-id':str(uuid.uuid4())} )
+
+        service = self.client.get_service(name, headers={'x-fc-trace-id': str(uuid.uuid4())})
         service = service.data
         self.assertEqual(service['serviceName'], name)
         self.assertEqual(service['description'], desc)
 
         # expect the delete service failed because of invalid etag.
         with self.assertRaises(fc2.FcError):
-            self.client.delete_service(name, headers ={'if-match':'invalid etag'})
+            self.client.delete_service(name, headers={'if-match': 'invalid etag'})
 
         # now success with valid etag.
-        self.client.delete_service(name, headers ={'if-match': etag})
+        self.client.delete_service(name, headers={'if-match': etag})
 
         # TODO: test create with logConfig and role.
 
@@ -68,7 +72,7 @@ class TestService(unittest.TestCase):
 
         # expect the delete service failed because of invalid etag.
         with self.assertRaises(fc2.FcError):
-            self.client.update_service(name, description='invalid', headers ={'if-match':'invalid etag'})
+            self.client.update_service(name, description='invalid', headers={'if-match': 'invalid etag'})
 
         self.assertEqual(service.data['description'], desc)
 
@@ -88,7 +92,7 @@ class TestService(unittest.TestCase):
 
         # create vpcConfig when creating the service
         logging.info('Create service: {0}'.format(name))
-        service = self.client.create_service(name, role=self.vpcRole,  vpcConfig=vpcConfig)
+        service = self.client.create_service(name, role=self.vpcRole, vpcConfig=vpcConfig)
         service = service.data
         self.assertEqual(service['serviceName'], name)
         self.assertTrue('createdTime' in service)
@@ -106,7 +110,7 @@ class TestService(unittest.TestCase):
         self.assertEqual(service['internetAccess'], False)
         self.client.delete_service(name)
 
-        # create vpcConfig for an exist service
+        # create vpcConfig for an existing service
         service = self.client.create_service(name).data
         self.assertEqual(service['internetAccess'], True)
         service = self.client.update_service(name, role=self.vpcRole, vpcConfig=vpcConfig).data
@@ -115,8 +119,66 @@ class TestService(unittest.TestCase):
         self.assertEqual(service['vpcConfig']['vSwitchIds'], [self.vSwitchIds])
         self.assertEqual(service['vpcConfig']['securityGroupId'], self.securityGroupId)
 
+    def test_nasConfig(self):
+        name = 'test_nasConfig'
+        try:
+            self.client.delete_service(name)
+        except:
+            pass
+        vpcConfig = {
+            'vpcId': self.vpcId,
+            'vSwitchIds': [self.vSwitchIds],
+            'securityGroupId': self.securityGroupId
+        }
+        nasConfig = {
+            "userId": int(self.userId),
+            "groupId": int(self.groupId),
+            "mountPoints": [
+                {
+                    "serverAddr": self.nasServerAddr,
+                    "mountDir": self.nasMountDir
+                }
+            ]
+        }
+
+        # create vpcConfig when creating the service
+        logging.info('Create service: {0}'.format(name))
+        service = self.client.create_service(name, role=self.vpcRole, vpcConfig=vpcConfig, nasConfig=nasConfig)
+        service = service.data
+        self.assertEqual(service['serviceName'], name)
+        self.assertTrue('createdTime' in service)
+        self.assertTrue('lastModifiedTime' in service)
+        self.assertTrue('logConfig' in service)
+        self.assertTrue('role' in service)
+        self.assertTrue('serviceId' in service)
+        self.assertEqual(service['internetAccess'], True)
+        self.assertEqual(service['vpcConfig']['vpcId'], self.vpcId)
+        self.assertEqual(service['vpcConfig']['vSwitchIds'], [self.vSwitchIds])
+        self.assertEqual(service['vpcConfig']['securityGroupId'], self.securityGroupId)
+        logging.info('Create service reply: {0}'.format(service))
+        self.assertEqual(service['nasConfig']['userId'], int(self.userId))
+        self.assertEqual(service['nasConfig']['groupId'], int(self.groupId))
+        self.assertEqual(service['nasConfig']['mountPoints'][0]["serverAddr"], self.nasServerAddr)
+        self.assertEqual(service['nasConfig']['mountPoints'][0]["mountDir"], self.nasMountDir)
+
+        # update service
+        nasConfig = {
+            "userId": -1,
+            "groupId": -1,
+            "mountPoints": [
+                {
+                    "serverAddr": self.nasServerAddr,
+                    "mountDir": self.nasMountDir
+                }
+            ]
+        }
+        service = self.client.update_service(name, nasConfig=nasConfig).data
+        self.assertEqual(service['nasConfig']['userId'], -1)
+        self.assertEqual(service['nasConfig']['groupId'], -1)
+        self.client.delete_service(name)
+
     def _clear_list_service(self):
-         # Use the prefix to isolate the services.
+        # Use the prefix to isolate the services.
         prefix = 'test_list_'
         # Cleanup the resources.
         try:
@@ -143,7 +205,6 @@ class TestService(unittest.TestCase):
             self.client.delete_service(prefix + 'zzz')
         except:
             pass
-
 
     def test_list(self):
         self._clear_list_service()
@@ -201,4 +262,3 @@ class TestService(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

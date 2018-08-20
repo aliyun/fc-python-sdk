@@ -107,7 +107,20 @@ Getting started
     # create vpcConfig when creating the service
     # you have to set the role if you want to set vpc config
     vpc_role = 'acs:ram::12345678:role/aliyunvpcrole'
-    service = self.client.create_service(name, role=vpc_role,  vpcConfig=vpcConfig)
+
+    # set nas config when creating the service
+    nasConfig = {
+           "userId": '<The NAS file system user id>',
+           "groupId": '<The NAS file system group id>',
+           "mountPoints": [
+                {
+                    "serverAddrserverAddr" : '<The NAS file system mount target>',
+                    "mountDir" : '<The mount dir to the local file system>',
+                }
+           ],
+    }
+
+    service = client.create_service(name, role=vpc_role, vpcConfig=vpcConfig, nasConfig=nasConfig)
 
     # Create function.
     # the current directory has a main.zip file (main.py which has a function of myhandler)
