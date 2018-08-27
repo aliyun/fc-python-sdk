@@ -33,7 +33,18 @@ We suggest using fc2, The main difference between fc and fc2 is:
             headers = {'x-fc-invocation-type': 'Sync', 'x-fc-log-type' : 'None'}):                                           
         ...
 
-Attention: abandon async_invoke_function, there is only one function interface invoke_function, distinguish between synchronous and asynchronous by x-fc-invocation-type parameters.
+Attention: abandon async_invoke_function, there is only one function interface invoke_function, distinguish between synchronous and asynchronous by x-fc-invocation-type parameters(Sync or Async).
+
+
+.. code-block:: python
+
+    # sync invoke
+    client.invoke_function('service_name', 'function_name')
+
+    # async invoke
+    client.invoke_function('service_name', 'function_name', headers = {'x-fc-invocation-type': 'Async'})
+
+
 
 
 2, The all http response returned by the user is the following object
@@ -187,7 +198,7 @@ Getting started
     dst.close()
 
     # Invoke function asynchronously.
-    client.async_invoke_function('service_name', 'function_name')
+    client.invoke_function('service_name', 'function_name', headers = {'x-fc-invocation-type': 'Async'})
 
     # List services.
     client.list_services()
