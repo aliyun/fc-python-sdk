@@ -367,6 +367,7 @@ class Client(object):
 
     def create_function(
             self, serviceName, functionName, runtime, handler,
+            initializer=None, initializationTimeout=30,
             codeZipFile=None, codeDir=None, codeOSSBucket=None, codeOSSObject=None,
             description=None, memorySize=256, timeout=60, headers={}, environmentVariables=None):
         """
@@ -375,6 +376,7 @@ class Client(object):
         :param functionName: (required, string) the name of the function.
         :param runtime: (required, string) the runtime type. For example, nodejs4.4, python2.7 and etc.
         :param handler: (required, string) the entry point of the function.
+        :param initializer: (required, string) the entry point of the initializer.
         :param codeZipFile: (optional, string) the file path of the zipped code.
         :param codeDir: (optional, string) the directory of the code.
         :param codeOSSBucket: (optional, string) the oss bucket where the code located in.
@@ -382,6 +384,7 @@ class Client(object):
         :param description: (optional, string) the readable description of the function.
         :param memorySize: (optional, integer) the memory size of the function, in MB.
         :param timeout: (optional, integer) the max execution time of the function, in second.
+        :param initializationTimeout: (optional, integer) the max execution time of the initializer, in second.
         :param environmentVariables: (optional, dict) the environment variables of the function, both key and value are string type.
         :param headers, optional
             1, 'x-fc-trace-id': string (a uuid to do the request tracing)
@@ -397,15 +400,19 @@ class Client(object):
             'functionId': 'string',
             'functionName': 'string',
             'handler': 'string',
+            'initializer': 'string',
             'lastModifiedTime': 'string',
             'memorySize': 512,            // in MB
             'runtime': 'string',
             'timeout': 60,                // in second
+            'initializationTimeout': 30   // in second
         }
         """
         serviceName, functionName, runtime, handler, memorySize, timeout = \
             str(serviceName), str(functionName), str(runtime), str(handler), int(memorySize), int(timeout)
 
+        initializer = str(initializer) if initializer else initializer
+        initializationTimeout = int(initializationTimeout) if initializationTimeout else initializationTimeout
         codeZipFile = str(codeZipFile) if codeZipFile else codeZipFile
         codeDir = str(codeDir) if codeDir else codeDir
         codeOSSBucket = str(codeOSSBucket) if codeOSSBucket else codeOSSBucket
@@ -437,8 +444,14 @@ class Client(object):
         if memorySize:
             payload['memorySize'] = memorySize
 
+        if initializer:
+            payload['initializer'] = initializer
+
         if timeout:
             payload['timeout'] = timeout
+
+        if initializationTimeout:
+            payload['initializationTimeout'] = initializationTimeout
 
         if environmentVariables != None:
             payload['environmentVariables'] = environmentVariables
@@ -449,6 +462,7 @@ class Client(object):
 
     def update_function(
             self, serviceName, functionName,
+            initializer=None, initializationTimeout=None,
             codeZipFile=None, codeDir=None, codeOSSBucket=None, codeOSSObject=None,
             description=None, handler=None, memorySize=None, runtime=None, timeout=None,
             headers={}, environmentVariables=None):
@@ -458,6 +472,7 @@ class Client(object):
         :param functionName: (required, string) the name of the function.
         :param runtime: (required, string) the runtime type. For example, nodejs4.4, python2.7 and etc.
         :param handler: (required, string) the entry point of the function.
+        :param initializer: (required, string) the entry point of the initializer.
         :param codeZipFile: (optional, string) the file path of the zipped code.
         :param codeDir: (optional, string) the directory of the code.
         :param codeOSSBucket: (optional, string) the oss bucket where the code located in.
@@ -465,6 +480,7 @@ class Client(object):
         :param description: (optional, string) the readable description of the function.
         :param memorySize: (optional, integer) the memory size of the function, in MB.
         :param timeout: (optional, integer) the max execution time of the function, in second.
+        :param initializationTimeout: (optional, integer) the max execution time of the initializer, in second.
         :param etag: (optional, string) delete the service only when matched the given etag.
         :param environmentVariables: (optional, dict) the environment variables of the function, both key and value are string type.
         :param headers, optional
@@ -482,17 +498,21 @@ class Client(object):
             'functionId': 'string',
             'functionName': 'string',
             'handler': 'string',
+            'initializer': 'string',
             'lastModifiedTime': 'string',
             'memorySize': 512,            // in MB
             'runtime': 'string',
             'timeout': 60,                // in second
+            'initializationTimeout': 30,  // in second
         }
         """
         serviceName, functionName = str(serviceName), str(functionName)
         handler = str(handler) if handler else handler
+        initializer = str(initializer) if initializer else initializer
         runtime = str(runtime) if runtime else runtime
         memorySize = int(memorySize) if memorySize else memorySize
         timeout = int(timeout) if timeout else timeout
+        initializationTimeout = int(initializationTimeout) if initializationTimeout else initializationTimeout
         codeZipFile = str(codeZipFile) if codeZipFile else codeZipFile
         codeDir = str(codeDir) if codeDir else codeDir
         codeOSSBucket = str(codeOSSBucket) if codeOSSBucket else codeOSSBucket
@@ -508,6 +528,9 @@ class Client(object):
 
         if handler:
             payload['handler'] = handler
+
+        if initializer:
+            payload['initializer'] = initializer
 
         if codeZipFile:
             # codeZipFile has highest priority.
@@ -531,6 +554,9 @@ class Client(object):
 
         if timeout:
             payload['timeout'] = timeout
+
+        if initializationTimeout:
+            payload['initializationTimeout'] = initializationTimeout
 
         if environmentVariables != None:
             payload['environmentVariables'] = environmentVariables
@@ -623,10 +649,12 @@ class Client(object):
                     'functionId': 'string',
                     'functionName': 'string',
                     'handler': 'string',
+                    'initializer': 'string',
                     'lastModifiedTime': 'string',
                     'memorySize': 512,            // in MB
                     'runtime': 'string',
                     'timeout': 60,                // in second
+                    'initializationTimeout': 30,  // in second
                 },
                 ...
             ],
