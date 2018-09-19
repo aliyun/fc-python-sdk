@@ -251,7 +251,7 @@ class TestService(unittest.TestCase):
         self.assertTrue(services[0]['serviceName'], prefix + 'abc')
         self.assertTrue(services[1]['serviceName'], prefix + 'abd')
 
-        # list servies with prefix and startKey
+        # list services with prefix and startKey
         r = self.client.list_services(limit=2, prefix=prefix + 'ab', startKey=prefix + 'abd')
         r = r.data
         services = r['services']

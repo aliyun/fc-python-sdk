@@ -38,9 +38,9 @@ class Client(object):
         self.host = Client._get_host(endpoint)
         self.api_version = '2016-08-15'
         self.user_agent = \
-            'aliyun-fc-sdk-v{0}.python-{1}.{2}-{3}-{4}'.\
-            format(__version__, platform.python_version(),
-                   platform.system(), platform.release(), platform.machine())
+            'aliyun-fc-sdk-v{0}.python-{1}.{2}-{3}-{4}'. \
+                format(__version__, platform.python_version(),
+                       platform.system(), platform.release(), platform.machine())
         self.auth = auth.Auth(access_key_id, access_key_secret, security_token)
         self.timeout = kwargs.get('Timeout', 60)
 
@@ -61,7 +61,7 @@ class Client(object):
 
         return endpoint.strip()
 
-    def _build_common_headers(self, method, path, customHeaders = {}, unescaped_queries=None):
+    def _build_common_headers(self, method, path, customHeaders={}, unescaped_queries=None):
         headers = {
             'host': self.host,
             'date': email.utils.formatdate(usegmt=True),
@@ -75,7 +75,7 @@ class Client(object):
         if customHeaders:
             headers.update(customHeaders)
 
-         # Sign the request and set the signature to headers.
+        # Sign the request and set the signature to headers.
         headers['authorization'] = self.auth.sign_request(method, path, headers, unescaped_queries)
 
         return headers
@@ -87,7 +87,8 @@ class Client(object):
         path = '/{0}/proxy/{1}/{2}{3}'.format(self.api_version, serviceName, functionName, path if path != "" else "/")
         url = '{0}{1}'.format(self.endpoint, path)
         headers = self._build_common_headers(method, unescape(path), headers, params)
-        logging.debug('Do http request. Method: {0}. URL: {1}. Params: {2}. Headers: {3}'.format(method, url, params, headers))
+        logging.debug(
+            'Do http request. Method: {0}. URL: {1}. Params: {2}. Headers: {3}'.format(method, url, params, headers))
         r = requests.request(method, url, headers=headers, params=params, data=body, timeout=self.timeout)
         return r
 
@@ -102,14 +103,14 @@ class Client(object):
                     r.status_code, method, url, r.headers))
         elif 400 <= r.status_code < 500:
             errmsg = \
-                'Client error: {0}. Message: {1}. Method: {2}. URL: {3}. Request headers: {4}. Response headers: {5}'.\
-                format(r.status_code, r.json(), method, url, headers, r.headers)
+                'Client error: {0}. Message: {1}. Method: {2}. URL: {3}. Request headers: {4}. Response headers: {5}'. \
+                    format(r.status_code, r.json(), method, url, headers, r.headers)
             logging.error(errmsg)
             raise self.__gen_request_err(r)
         elif 500 <= r.status_code < 600:
             errmsg = \
                 'Server error: {0}. Message: {1}. Method: {2}. URL: {3}. Request headers: {4}. Response headers: {5}'. \
-                format(r.status_code, r.json(), method, url, headers, r.headers)
+                    format(r.status_code, r.json(), method, url, headers, r.headers)
             logging.error(errmsg)
             raise self.__gen_request_err(r)
 
@@ -117,12 +118,13 @@ class Client(object):
 
     def __gen_request_err(self, r):
         err_d = r.json()
-        err_d['RequestId'] = r.headers.get('X-Fc-Request-Id','unknown')
+        err_d['RequestId'] = r.headers.get('X-Fc-Request-Id', 'unknown')
         err_code = err_d.get('ErrorCode', '')
         err_msg = json.dumps(err_d)
         return fc_exceptions.get_fc_error(err_msg, r.status_code, err_code, err_d['RequestId'])
 
-    def create_service(self, serviceName, description=None, logConfig=None, role=None, headers={}, internetAccess=None, vpcConfig=None, nasConfig=None):
+    def create_service(self, serviceName, description=None, logConfig=None, role=None, headers={}, internetAccess=None,
+                       vpcConfig=None, nasConfig=None):
         """
         Create a service.
         :param serviceName: name of the service.
@@ -188,7 +190,7 @@ class Client(object):
             payload['nasConfig'] = nasConfig
 
         r = self._do_request(method, path, headers, body=json.dumps(payload).encode('utf-8'))
-       # 'etag' now in headers
+        # 'etag' now in headers
         return FcHttpResponse(r.headers, r.json())
 
     def delete_service(self, serviceName, headers={}):
@@ -207,7 +209,8 @@ class Client(object):
 
         self._do_request(method, path, headers)
 
-    def update_service(self, serviceName, description=None, logConfig=None, role=None, headers={}, internetAccess=None, vpcConfig=None, nasConfig=None):
+    def update_service(self, serviceName, description=None, logConfig=None, role=None, headers={}, internetAccess=None,
+                       vpcConfig=None, nasConfig=None):
         """
         Update the service attributes.
         :param serviceName: name of the service.
@@ -335,8 +338,8 @@ class Client(object):
         path = '/{0}/services'.format(self.api_version)
         headers = self._build_common_headers(method, path, headers)
 
-        paramlst = [('limit',  limit), ('prefix', prefix), ('nextToken', nextToken), ('startKey', startKey)]
-        params = dict( (k,v) for k, v in paramlst if v )
+        paramlst = [('limit', limit), ('prefix', prefix), ('nextToken', nextToken), ('startKey', startKey)]
+        params = dict((k, v) for k, v in paramlst if v)
 
         r = self._do_request(method, path, headers, params=params)
         return FcHttpResponse(r.headers, r.json())
@@ -353,13 +356,14 @@ class Client(object):
             code_d['oss'] = (codeOSSBucket, codeOSSObject)
 
         if len(code_d) == 0:
-            raise Exception('codeZipFile, codeDir, (codeOSSBucket, codeOSSObject) , these three parameters must have an assignment')
+            raise Exception(
+                'codeZipFile, codeDir, (codeOSSBucket, codeOSSObject) , these three parameters must have an assignment')
 
         if len(code_d) > 1:
-            raise Exception('codeZipFile, codeDir, (codeOSSBucket, codeOSSObject) , these three parameters need only one paramet$er assignment')
+            raise Exception(
+                'codeZipFile, codeDir, (codeOSSBucket, codeOSSObject) , these three parameters need only one paramet$er assignment')
 
         return True
-
 
     def create_function(
             self, serviceName, functionName, runtime, handler,
@@ -400,7 +404,7 @@ class Client(object):
         }
         """
         serviceName, functionName, runtime, handler, memorySize, timeout = \
-             str(serviceName), str(functionName), str(runtime), str(handler), int(memorySize), int(timeout)
+            str(serviceName), str(functionName), str(runtime), str(handler), int(memorySize), int(timeout)
 
         codeZipFile = str(codeZipFile) if codeZipFile else codeZipFile
         codeDir = str(codeDir) if codeDir else codeDir
@@ -633,14 +637,13 @@ class Client(object):
         path = '/{0}/services/{1}/functions'.format(self.api_version, serviceName)
         headers = self._build_common_headers(method, path, headers)
 
-        paramlst = [('limit',  limit), ('prefix', prefix), ('nextToken', nextToken), ('startKey', startKey)]
-        params = dict( (k,v) for k, v in paramlst if v )
+        paramlst = [('limit', limit), ('prefix', prefix), ('nextToken', nextToken), ('startKey', startKey)]
+        params = dict((k, v) for k, v in paramlst if v)
 
         r = self._do_request(method, path, headers, params=params)
         return FcHttpResponse(r.headers, r.json())
 
-
-    def invoke_function(self, serviceName, functionName, payload=None, headers = {}):
+    def invoke_function(self, serviceName, functionName, payload=None, headers={}):
 
         """
         Invoke the function synchronously or asynchronously., default is synchronously.
@@ -669,7 +672,8 @@ class Client(object):
 
         return FcHttpResponse(r.headers, r.content)
 
-    def create_trigger(self, serviceName, functionName, triggerName, triggerType, triggerConfig, sourceArn, invocationRole, headers={}):
+    def create_trigger(self, serviceName, functionName, triggerName, triggerType, triggerConfig, sourceArn,
+                       invocationRole, headers={}):
         """
         Create a trigger.
         :param serviceName: (required, string), name of the service that the trigger belongs to.
@@ -699,7 +703,8 @@ class Client(object):
         method = 'POST'
         path = '/{0}/services/{1}/functions/{2}/triggers'.format(self.api_version, serviceName, functionName)
         headers = self._build_common_headers(method, path, headers)
-        payload = {'triggerName': triggerName, 'triggerType': triggerType, 'triggerConfig': triggerConfig, 'sourceArn': sourceArn, 'invocationRole': invocationRole}
+        payload = {'triggerName': triggerName, 'triggerType': triggerType, 'triggerConfig': triggerConfig,
+                   'sourceArn': sourceArn, 'invocationRole': invocationRole}
         r = self._do_request(method, path, headers, body=json.dumps(payload).encode('utf-8'))
         return FcHttpResponse(r.headers, r.json())
 
@@ -716,11 +721,13 @@ class Client(object):
         :return: None
         """
         method = 'DELETE'
-        path = '/{0}/services/{1}/functions/{2}/triggers/{3}'.format(self.api_version, serviceName, functionName, triggerName)
+        path = '/{0}/services/{1}/functions/{2}/triggers/{3}'.format(self.api_version, serviceName, functionName,
+                                                                     triggerName)
         headers = self._build_common_headers(method, path, headers)
         self._do_request(method, path, headers)
 
-    def update_trigger(self, serviceName, functionName, triggerName, triggerConfig=None, invocationRole=None, headers={}):
+    def update_trigger(self, serviceName, functionName, triggerName, triggerConfig=None, invocationRole=None,
+                       headers={}):
         """
         Update a trigger.
         :param serviceName: (required, string), name of the service that the trigger belongs to.
@@ -747,7 +754,8 @@ class Client(object):
         }
         """
         method = 'PUT'
-        path = '/{0}/services/{1}/functions/{2}/triggers/{3}'.format(self.api_version, serviceName, functionName, triggerName)
+        path = '/{0}/services/{1}/functions/{2}/triggers/{3}'.format(self.api_version, serviceName, functionName,
+                                                                     triggerName)
         headers = self._build_common_headers(method, path, headers)
         payload = {}
         if triggerConfig:
@@ -780,12 +788,14 @@ class Client(object):
         }
         """
         method = 'GET'
-        path = '/{0}/services/{1}/functions/{2}/triggers/{3}'.format(self.api_version, serviceName, functionName, triggerName)
+        path = '/{0}/services/{1}/functions/{2}/triggers/{3}'.format(self.api_version, serviceName, functionName,
+                                                                     triggerName)
         headers = self._build_common_headers(method, path, headers)
         r = self._do_request(method, path, headers)
         return FcHttpResponse(r.headers, r.json())
 
-    def list_triggers(self, serviceName, functionName, limit=None, nextToken=None, prefix=None, startKey=None, headers={}):
+    def list_triggers(self, serviceName, functionName, limit=None, nextToken=None, prefix=None, startKey=None,
+                      headers={}):
         """
         List the triggers of the specified function.
         :param limit: (optional, integer) the total number of the returned triggerss.
@@ -820,6 +830,166 @@ class Client(object):
         headers = self._build_common_headers(method, path, headers)
         paramlst = [('limit', limit), ('prefix', prefix), ('nextToken', nextToken), ('startKey', startKey)]
         params = dict((k, v) for k, v in paramlst if v)
+        r = self._do_request(method, path, headers, params=params)
+        return FcHttpResponse(r.headers, r.json())
+
+    def create_custom_domain(self, domainName, protocol=None, routeConfig=None, headers={}):
+        """
+        Create a custom domain.
+        :param domainName: name of the custom domain.
+        :param protocol: (optional, string), HTTP.
+        :param routeConfig: (optional, dict), route configuration, mapping of path and function.
+        {
+            'routes': [
+                {
+                    'path': 'string',
+                    'serviceName': 'string',
+                    'functionName': 'string',
+                },
+                ...
+            ]
+        }
+        :return: FcHttpResponse
+        headers: dict {'etag':'string', ...}
+        data: dict. For more information, see: https://help.aliyun.com/document_detail/52877.html#createCustomDomain
+        {
+            'createdTime': 'string',
+            'lastModifiedTime': 'string',
+            'routeConfig': {
+                'routes': 'dict',
+            },
+            'protocol': 'string',
+            'serviceId': 'string',
+            'domainName': 'string',
+        }
+        """
+        method = 'POST'
+        path = '/{0}/custom-domains'.format(self.api_version)
+        headers = self._build_common_headers(method, path, headers)
+
+        payload = {'domainName': domainName}
+        if protocol:
+            payload['protocol'] = protocol
+        if routeConfig:
+            payload['routeConfig'] = routeConfig
+
+        r = self._do_request(method, path, headers, body=json.dumps(payload).encode('utf-8'))
+        # 'etag' now in headers
+        return FcHttpResponse(r.headers, r.json())
+
+    def delete_custom_domain(self, domainName, headers={}):
+        """
+        Delete the specified custom domain.
+        :param domain_name: name of the custom domain.
+        :param headers, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            3, user define key value
+        :return: None
+        """
+        method = 'DELETE'
+        path = '/{0}/custom-domains/{1}'.format(self.api_version, domainName)
+        headers = self._build_common_headers(method, path, headers)
+
+        self._do_request(method, path, headers)
+
+    def update_custom_domain(self, domainName, protocol=None, routeConfig=None, headers={}):
+        """
+        Update the custom domain attributes.
+        :param domainName: name of the custom domain.
+        :param protocol: (optional, string), HTTP.
+        :param routeConfig: (optional, dict), route configuration, mapping of path and function.
+        {
+            'routes': [
+                {
+                    'path': 'string',
+                    'serviceName': 'string',
+                    'functionName': 'string',
+                },
+                ...
+            ]
+        }
+        :return: FcHttpResponse
+        headers: dict {'etag':'string', ...}
+        data: dict. For more information, see: https://help.aliyun.com/document_detail/52877.html#createCustomDomain
+        {
+            'createdTime': 'string',
+            'lastModifiedTime': 'string',
+            'routeConfig': {
+                'routes': 'dict',
+            },
+            'protocol': 'string',
+            'domainName': 'string',
+        }
+        """
+        method = 'PUT'
+        path = '/{0}/custom-domains/{1}'.format(self.api_version, domainName)
+        headers = self._build_common_headers(method, path, headers)
+
+        payload = {}
+        if protocol:
+            payload['protocol'] = protocol
+        if routeConfig:
+            payload['routeConfig'] = routeConfig
+
+        r = self._do_request(method, path, headers, body=json.dumps(payload).encode('utf-8'))
+        # 'etag' now in headers
+        return FcHttpResponse(r.headers, r.json())
+
+    def get_custom_domain(self, domainName, headers={}):
+        """
+        Get the custom domain configuration.
+        :param domainName: (string) name of the custom domain.
+        :param headers, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, user define key value
+        :return: FcHttpResponse
+        headers: dict {'etag':'string', ...}
+        data: dict custom domain configuration.
+        """
+        method = 'GET'
+        path = '/{0}/custom-domains/{1}'.format(self.api_version, domainName)
+        headers = self._build_common_headers(method, path, headers)
+
+        r = self._do_request(method, path, headers)
+        return FcHttpResponse(r.headers, r.json())
+
+    def list_custom_domains(self, limit=None, nextToken=None, prefix=None, startKey=None, headers={}):
+        """
+        List the custom domains in the current account.
+        :param limit: (optional, integer) the total number of the returned services.
+        :param nextToken: (optional, string) continue listing the service from the previous point.
+        :param prefix: (optional, string) list the services with the given prefix.
+        :param startKey: (optional, string) startKey is where you want to start listing from.
+        :param headers, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, user define key value
+        :return: FcHttpResponse
+        headers: dict
+        data: dict, including all service information.
+        {
+            'services':
+            [
+                {
+                    'createdTime': 'string',
+                    'lastModifiedTime': 'string',
+                    'routeConfig': {
+                        'routes': 'dict',
+                    },
+                    'protocol': 'string',
+                    'domainName': 'string',
+                 },
+                ...
+            ],
+            'nextToken': 'string'
+        }
+        """
+        method = 'GET'
+        path = '/{0}/custom-domains'.format(self.api_version)
+        headers = self._build_common_headers(method, path, headers)
+
+        paramlst = [('limit', limit), ('prefix', prefix), ('nextToken', nextToken), ('startKey', startKey)]
+        params = dict((k, v) for k, v in paramlst if v)
+
         r = self._do_request(method, path, headers, params=params)
         return FcHttpResponse(r.headers, r.json())
 
