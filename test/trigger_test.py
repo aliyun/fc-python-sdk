@@ -144,13 +144,13 @@ class TestService(unittest.TestCase):
         }
         logging.info('update trigger: {0}'.format(trigger_name))
         update_trigger_resp = self.client.update_trigger(service_name, function_name, trigger_name,
-                                                         trigger_config_update, invocation_role).data
+                                                         triggerConfig=trigger_config_update, invocationRole=invocation_role).data
         self.check_trigger_response(update_trigger_resp, trigger_name, trigger_type, trigger_config_update, source_arn,
                                     invocation_role)
         # 404
         with self.assertRaises(fc2.FcError):
             self.client.update_trigger(service_name + 'invalid', function_name, trigger_name,
-                                       trigger_config_update, invocation_role)
+                                       triggerConfig=trigger_config_update, invocationRole=invocation_role)
 
         # list
         for i in range(1, 5):
@@ -228,8 +228,9 @@ class TestService(unittest.TestCase):
                 'methods': ['GET', 'POST'],
         }
         logging.info('update trigger: {0}'.format(trigger_name))
-        update_trigger_resp = self.client.update_trigger(service_name, function_name, trigger_name,
-                                                         trigger_config_update, invocation_role).data
+
+        update_trigger_resp = self.client.update_trigger(service_name, function_name, trigger_name, 
+                                                         triggerConfig=trigger_config_update, invocationRole=invocation_role).data
         self.assertEqual(update_trigger_resp['triggerConfig']['authType'], 'function')
         self.check_trigger_response(update_trigger_resp, trigger_name, trigger_type, trigger_config_update,
                                     None,
@@ -255,7 +256,7 @@ class TestService(unittest.TestCase):
         # 404 service not found
         with self.assertRaises(fc2.FcError):
             self.client.update_trigger(service_name + 'invalid', function_name, trigger_name,
-                                       trigger_config_update, invocation_role)
+                                       triggerConfig=trigger_config_update, invocationRole=invocation_role)
 
         # list
         logging.info('list trigger: {0}'.format(trigger_name))
@@ -336,7 +337,8 @@ class TestService(unittest.TestCase):
         }
         logging.info('update trigger: {0}'.format(trigger_name))
         update_trigger_resp = self.client.update_trigger(service_name, function_name, trigger_name,
-                                                         trigger_config_update, invocation_role).data
+                                                         triggerConfig=trigger_config_update, invocationRole=invocation_role).data
+        
         self.assertEqual(update_trigger_resp['triggerConfig']['jobConfig']['triggerInterval'], 80)
         self.check_trigger_response(update_trigger_resp, trigger_name, trigger_type, trigger_config_update,
                                     source_arn,
@@ -344,7 +346,7 @@ class TestService(unittest.TestCase):
         # 404 service not found
         with self.assertRaises(fc2.FcError):
             self.client.update_trigger(service_name + 'invalid', function_name, trigger_name,
-                                       trigger_config_update, invocation_role)
+                                       triggerConfig=trigger_config_update, invocationRole=invocation_role)
 
         # list
         logging.info('list trigger: {0}'.format(trigger_name))
