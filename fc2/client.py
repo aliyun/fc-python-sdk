@@ -283,10 +283,11 @@ class Client(object):
         # 'etag' now in headers
         return FcHttpResponse(r.headers, r.json())
 
-    def get_service(self, serviceName, headers={}):
+    def get_service(self, serviceName, qualifier=None, headers={}):
         """
         Get the service configuration.
         :param serviceName: (string) name of the service.
+        :param qualifier: (optional, string) qualifier of service.
         :param headers, optional
             1, 'x-fc-trace-id': string (a uuid to do the request tracing)
             2, user define key value
@@ -295,6 +296,8 @@ class Client(object):
         data: dict service configuration.
         """
         method = 'GET'
+        if qualifier:
+            serviceName += '${0}'.format(qualifier)
         path = '/{0}/services/{1}'.format(self.api_version, serviceName)
         headers = self._build_common_headers(method, path, headers)
 
@@ -556,11 +559,12 @@ class Client(object):
 
         self._do_request(method, path, headers)
 
-    def get_function(self, serviceName, functionName, headers={}):
+    def get_function(self, serviceName, functionName, qualifier=None, headers={}):
         """
         Get the function configuration.
         :param serviceName: (required, string) name of the service.
         :param functionName: (required, string) name of the function.
+        :param qualifier: (optional, string) qualifier of service.
         :param headers, optional
             1, 'x-fc-trace-id': string (a uuid to do the request tracing)
             2, user define key value
@@ -569,6 +573,8 @@ class Client(object):
         data: dict function configuration.
         """
         method = 'GET'
+        if qualifier:
+            serviceName += '${0}'.format(qualifier)
         path = '/{0}/services/{1}/functions/{2}'.format(self.api_version, serviceName, functionName)
         headers = self._build_common_headers(method, path, headers)
 
@@ -576,11 +582,12 @@ class Client(object):
         # 'etag' now in headers
         return FcHttpResponse(r.headers, r.json())
 
-    def get_function_code(self, serviceName, functionName, headers={}):
+    def get_function_code(self, serviceName, functionName, qualifier=None, headers={}):
         """
         Get the function code.
         :param serviceName: (required, string) name of the service.
         :param functionName: (required, string) name of the function.
+        :param qualifier: (optional, string) qualifier of service.
         :param headers, optional
             1, 'x-fc-trace-id': string (a uuid to do the request tracing)
             2, user define key value
@@ -593,19 +600,22 @@ class Client(object):
         }
         """
         method = 'GET'
+        if qualifier:
+            serviceName += '${0}'.format(qualifier)
         path = '/{0}/services/{1}/functions/{2}/code'.format(self.api_version, serviceName, functionName)
         headers = self._build_common_headers(method, path, headers)
 
         r = self._do_request(method, path, headers)
         return FcHttpResponse(r.headers, r.json())
 
-    def list_functions(self, serviceName, limit=None, nextToken=None, prefix=None, startKey=None, headers={}):
+    def list_functions(self, serviceName, limit=None, nextToken=None, prefix=None, startKey=None, qualifier=None, headers={}):
         """
         List the functions of the specified service.
         :param limit: (optional, integer) the total number of the returned services.
         :param nextToken: (optional, string) continue listing the service from the previous point.
         :param prefix: (optional, string) list the services with the given prefix.
         :param startKey: (optional, string) startKey is where you want to start listing from.
+        :param qualifier: (optional, string) qualifier of service.
         :param headers, optional
             1, 'x-fc-trace-id': string (a uuid to do the request tracing)
             2, user define key value
@@ -634,6 +644,8 @@ class Client(object):
         }
         """
         method = 'GET'
+        if qualifier:
+            serviceName += '${0}'.format(qualifier)
         path = '/{0}/services/{1}/functions'.format(self.api_version, serviceName)
         headers = self._build_common_headers(method, path, headers)
 
@@ -643,12 +655,13 @@ class Client(object):
         r = self._do_request(method, path, headers, params=params)
         return FcHttpResponse(r.headers, r.json())
 
-    def invoke_function(self, serviceName, functionName, payload=None, headers={}):
+    def invoke_function(self, serviceName, functionName, qualifier=None, payload=None, headers={}):
 
         """
         Invoke the function synchronously or asynchronously., default is synchronously.
         :param serviceName: (required, string) the name of the service.
         :param functionName: (required, string) the name of the function.
+        :param qualifier: (optional, string) qualifier of service.
         :param payload: (optional, bytes or seekable file-like object): the input of the function.
         :param logType: (optional, string) 'None' or 'Tail'. When invoke a function synchronously,
         you can set the log type to 'Tail' to get the last 4KB base64-encoded function log.
@@ -660,6 +673,8 @@ class Client(object):
         :return: function output FcHttpResponse object.
         """
         method = 'POST'
+        if qualifier:
+            serviceName += '${0}'.format(qualifier)
         path = '/{0}/services/{1}/functions/{2}/invocations'.format(self.api_version, serviceName, functionName)
         headers = self._build_common_headers(method, path, headers)
 
@@ -673,7 +688,7 @@ class Client(object):
         return FcHttpResponse(r.headers, r.content)
 
     def create_trigger(self, serviceName, functionName, triggerName, triggerType, triggerConfig, sourceArn,
-                       invocationRole, headers={}):
+                       invocationRole, qualifier=None, headers={}):
         """
         Create a trigger.
         :param serviceName: (required, string), name of the service that the trigger belongs to.
@@ -683,6 +698,7 @@ class Client(object):
         :param triggerConfig: (required, dict), the config of the trigger, different types of trigger has different config.
         :param sourceArn: (optional, string), Aliyun Resource Name（ARN）of the event.In addition to timetrigger, other trigger parameters are required
         :param invocationRole: (optional, string), the role that event source uses to invoke the function.In addition to timetrigger, other trigger parameters are required.
+        :param qualifier: (optional, string) qualifier of service.
 
         :param headers, optional
             1, 'x-fc-trace-id': string (a uuid to do the request tracing)
@@ -704,7 +720,7 @@ class Client(object):
         path = '/{0}/services/{1}/functions/{2}/triggers'.format(self.api_version, serviceName, functionName)
         headers = self._build_common_headers(method, path, headers)
         payload = {'triggerName': triggerName, 'triggerType': triggerType, 'triggerConfig': triggerConfig,
-                   'sourceArn': sourceArn, 'invocationRole': invocationRole}
+                   'sourceArn': sourceArn, 'invocationRole': invocationRole, 'qualifier': qualifier}
         r = self._do_request(method, path, headers, body=json.dumps(payload).encode('utf-8'))
         return FcHttpResponse(r.headers, r.json())
 
@@ -726,7 +742,7 @@ class Client(object):
         headers = self._build_common_headers(method, path, headers)
         self._do_request(method, path, headers)
 
-    def update_trigger(self, serviceName, functionName, triggerName, triggerConfig=None, invocationRole=None,
+    def update_trigger(self, serviceName, functionName, triggerName, qualifier=None, triggerConfig=None, invocationRole=None,
                        headers={}):
         """
         Update a trigger.
@@ -735,6 +751,7 @@ class Client(object):
         :param triggerName: (required, string), name of the trigger.
         :param triggerConfig: (optional, dict), the config of the trigger, different types of trigger has different config.
         :param invocationRole: (optional, string), the role that event source uses to invoke the function.
+        :param qualifier: (optional, string) qualifier of service.
 
         :param headers, optional
             1, 'x-fc-trace-id': string (a uuid to do the request tracing)
@@ -762,6 +779,8 @@ class Client(object):
             payload['triggerConfig'] = triggerConfig
         if invocationRole:
             payload['invocationRole'] = invocationRole
+        if qualifier:
+            payload['qualifier'] = qualifier
         r = self._do_request(method, path, headers, body=json.dumps(payload).encode('utf-8'))
         return FcHttpResponse(r.headers, r.json())
 
@@ -992,6 +1011,257 @@ class Client(object):
 
         r = self._do_request(method, path, headers, params=params)
         return FcHttpResponse(r.headers, r.json())
+
+    def publish_version(self, serviceName, description=None, headers={}):
+        """
+        Publish a version.
+        :param serviceName: (required, string), name of the service.
+        :param description: (optional, string) the readable description of the version.
+
+        :param headers, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, 'if-match': string (publish the version only when matched the given etag.)
+            3, user define key value
+        :return: FcHttpResponse
+        headers: dict
+        data: dict of the version attributes.
+        {
+            'versionId': 'string',
+            'description': 'string',
+            'createdTime': 'string',
+            'lastModifiedTime ': 'string',
+        }
+        """
+        method = 'POST'
+        path = '/{0}/services/{1}/versions'.format(self.api_version, serviceName)
+        headers = self._build_common_headers(method, path, headers)
+
+        payload = {}
+        if description:
+            payload['description'] = description
+
+        r = self._do_request(method, path, headers, body=json.dumps(payload).encode('utf-8'))
+        return FcHttpResponse(r.headers, r.json())
+
+    def list_versions(self, serviceName, limit=None, nextToken=None, startKey=None, direction=None, headers={}):
+        """
+        List the versions of the current service.
+        :param serviceName: (required, string), name of the service.
+        :param limit: (optional, integer) the total number of the returned versions.
+        :param nextToken: (optional, string) continue listing the version from the previous point.
+        :param startKey: (optional, string) startKey is where you want to start listing from.
+        :param direction: (optional, string, default: BACKWARD) list the version with the given direction, "BACKWARD" or "FORWARD".
+        :param headers, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, user define key value
+        :return: FcHttpResponse
+        headers: dict
+        data: dict, including all function information.
+        {
+            'versions':
+            [
+                {
+                    'versionId': 'string',
+                    'description': 'string',
+                    'createdTime': 'string',
+                    'lastModifiedTime': 'string',
+                },
+                ...
+            ],
+            'nextToken': 'string'
+        }
+        """
+        method = 'GET'
+        path = '/{0}/services/{1}/versions'.format(self.api_version, serviceName)
+        headers = self._build_common_headers(method, path, headers)
+
+        paramlst = [('limit', limit), ('nextToken', nextToken), ('startKey', startKey), ('direction', direction)]
+        params = dict((k, v) for k, v in paramlst if v)
+
+        r = self._do_request(method, path, headers, params=params)
+        return FcHttpResponse(r.headers, r.json())
+
+    def delete_version(self, serviceName, versionId, headers={}):
+        """
+        Delete a version.
+        :param serviceName: (required, string), name of the service.
+        :param versionId: (required, string), Id of the version.
+        :param headers, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, user define key value
+        :return: None
+        """
+        method = 'DELETE'
+        path = '/{0}/services/{1}/versions/{2}'.format(self.api_version, serviceName, versionId)
+        headers = self._build_common_headers(method, path, headers)
+
+        self._do_request(method, path, headers)
+
+    def create_alias(self, serviceName, aliasName, versionId, description=None, additionalVersionWeight=None, headers={}):
+        """
+        Create an alias.
+        :param serviceName: (required, string), name of the service.
+        :param aliasName: (required, string), name of the alias.
+        :param versionId: (required, string), versionId referred by the alias.
+        :param description: (optional, string) the readable description of the alias.
+        :param additionalVersionWeight: (optional, dict), alias can shift some traffic to additional version by specified weight.
+            key is versionId, string type.
+            Value is weight, float64 type, range [0, 1].
+
+        :param headers, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, user define key value
+        :return: FcHttpResponse
+        headers: dict
+        data: dict of the version attributes.
+        {
+            'aliasName': 'string'
+            'versionId': 'string',
+            'description': 'string',
+            'additionalVersionWeight': 'dict',
+            'createdTime': 'string',
+            'lastModifiedTime': 'string',
+        }
+        """
+        method = 'POST'
+        path = '/{0}/services/{1}/aliases'.format(self.api_version, serviceName)
+        headers = self._build_common_headers(method, path, headers)
+
+        payload = {'aliasName': aliasName, 'versionId': versionId}
+        if description:
+            payload['description'] = description
+        if additionalVersionWeight != None:
+            payload['additionalVersionWeight'] = additionalVersionWeight
+        r = self._do_request(method, path, headers, body=json.dumps(payload).encode('utf-8'))
+
+        return FcHttpResponse(r.headers, r.json())
+
+    def get_alias(self, serviceName, aliasName, headers={}):
+        """
+        Get the alias.
+        :param serviceName: (required, string) name of the service.
+        :param aliasName: (required, string) name of the alias.
+        :param headers, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, user define key value
+        :return: FcHttpResponse
+        headers: dict {}
+        data: dict alias attributes.
+        {
+            'aliasName': 'string'
+            'versionId': 'string',
+            'description': 'string',
+            'additionalVersionWeight': 'dict',
+            'createdTime': 'string',
+            'lastModifiedTime': 'string',
+        }
+        """
+        method = 'GET'
+        path = '/{0}/services/{1}/aliases/{2}'.format(self.api_version, serviceName, aliasName)
+        headers = self._build_common_headers(method, path, headers)
+
+        r = self._do_request(method, path, headers)
+        return FcHttpResponse(r.headers, r.json())
+
+    def update_alias(self, serviceName, aliasName, versionId, description=None, additionalVersionWeight=None, headers={}):
+        """
+        Update an alias.
+        :param serviceName: (required, string), name of the service.
+        :param aliasName: (required, string), name of the alias.
+        :param versionId: (required, string), versionId referred by the alias.
+        :param description: (optional, string) the readable description of the alias.
+        :param additionalVersionWeight: (optional, dict), alias can shift some traffic to additional version by specified weight.
+            key is versionId, string type.
+            Value is weight, float64 type, range [0, 1].
+
+        :param headers, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, 'if-match': string (update the alias only when matched the given etag.)
+            3, user define key value
+        :return: FcHttpResponse
+        headers: dict
+        data: dict of the version attributes.
+        {
+            'aliasName': 'string'
+            'versionId': 'string',
+            'description': 'string',
+            'additionalVersionWeight': 'dict',
+            'createdTime': 'string',
+            'lastModifiedTime': 'string',
+        }
+        """
+        method = 'PUT'
+        path = '/{0}/services/{1}/aliases/{2}'.format(self.api_version, serviceName, aliasName)
+        headers = self._build_common_headers(method, path, headers)
+
+        payload = {}
+        if versionId:
+            payload['versionId'] = versionId
+        if description:
+            payload['description'] = description
+        if additionalVersionWeight != None:
+            payload['additionalVersionWeight'] = additionalVersionWeight
+
+        r = self._do_request(method, path, headers, body=json.dumps(payload).encode('utf-8'))
+        return FcHttpResponse(r.headers, r.json())
+
+    def list_aliases(self, serviceName, limit=None, nextToken=None, prefix=None, startKey=None, headers={}):
+        """
+        List the aliases in the current service.
+        :param serviceName: (required, string), name of the service.
+        :param limit: (optional, integer) the total number of the returned aliases.
+        :param nextToken: (optional, string) continue listing the aliase from the previous point.
+        :param prefix: (optional, string) list the aliases with the given prefix.
+        :param startKey: (optional, string) startKey is where you want to start listing from.
+        :param headers, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, user define key value
+        :return: FcHttpResponse
+        headers: dict
+        data: dict, including all aliase information.
+        {
+            'aliases':
+            [
+                {
+                    'aliasName': 'string'
+                    'versionId': 'string',
+                    'description': 'string',
+                    'additionalVersionWeight': 'dict',
+                    'createdTime': 'string',
+                    'lastModifiedTime': 'string',
+                },
+                ...
+            ],
+            'nextToken': 'string'
+        }
+        """
+        method = 'GET'
+        path = '/{0}/services/{1}/aliases'.format(self.api_version, serviceName)
+        headers = self._build_common_headers(method, path, headers)
+
+        paramlst = [('limit', limit), ('prefix', prefix), ('nextToken', nextToken), ('startKey', startKey)]
+        params = dict((k, v) for k, v in paramlst if v)
+
+        r = self._do_request(method, path, headers, params=params)
+        return FcHttpResponse(r.headers, r.json())
+
+    def delete_alias(self, serviceName, aliasName, headers={}):
+        """
+        Delete an aliase.
+        :param serviceName: (required, string), name of the service.
+        :param aliasName: (required, string), name of the alias.
+        :param headers, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, 'if-match': string (delete the alias only when matched the given etag.)
+            3, user define key value
+        :return: None
+        """
+        method = 'DELETE'
+        path = '/{0}/services/{1}/aliases/{2}'.format(self.api_version, serviceName, aliasName)
+        headers = self._build_common_headers(method, path, headers)
+
+        self._do_request(method, path, headers)
+
 
 class FcHttpResponse(object):
     def __init__(self, headers, data):
