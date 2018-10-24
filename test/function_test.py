@@ -45,17 +45,27 @@ class TestFunction(unittest.TestCase):
 
     def test_create(self):
         functionName= 'test_create_' + ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
-        desc = u'这是测试function'
+        desc1 = u'这是测试function'
         logging.info('Create function: {0}'.format(functionName))
-        function = self.client.create_function(
+        function1 = self.client.create_function(
             self.serviceName, functionName,
-            handler='main.my_handler', runtime='python2.7', codeDir='test/hello_world', description=desc, environmentVariables={'testKey': 'testValue'})
-        self.check_function(function, functionName, desc, 'python2.7')
-        function = function.data
-        self.assertEqual(function['environmentVariables']['testKey'], 'testValue')
+            handler='main.my_handler', runtime='python2.7', codeDir='test/hello_world', description=desc1, environmentVariables={'testKey': 'testValue'})
+        self.check_function(function1, functionName, desc1, 'python2.7')
+        function1 = function1.data
+        self.assertEqual(function1['environmentVariables']['testKey'], 'testValue')
 
+        # test create function with initializer
+        functionName2= 'test_create_' + ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
+        desc2 = u'test for initializer'
+        function2 = self.client.create_function(
+            self.serviceName, functionName2,
+            handler='main.my_handler', runtime='python2.7', codeDir='test/counter', initializer='main.my_initializer',
+            description=desc2, environmentVariables={'testKey': 'testValue'})
+        self.check_function(function2, functionName2, desc2, 'python2.7', 'main.my_initializer')
+        function2 = function2.data
+        self.assertEqual(function2['environmentVariables']['testKey'], 'testValue')
 
-    def check_function(self, function, functionName, desc, runtime = 'python2.7'):
+    def check_function(self, function, functionName, desc, runtime = 'python2.7', initializer = None, initializationTimeout = None):
         etag = function.headers['etag']
         self.assertNotEqual(etag, '')
         function = function.data
@@ -70,7 +80,10 @@ class TestFunction(unittest.TestCase):
         self.assertTrue('functionId' in function)
         self.assertTrue('memorySize' in function)
         self.assertTrue('timeout' in function)
-        
+        if desc == u'test for initializer':
+            self.assertEqual(function['initializer'], initializer)
+            self.assertEqual(function['initializationTimeout'], 30)
+
         checksum = function['codeChecksum']
         function = self.client.get_function(self.serviceName, functionName, headers ={'x-fc-trace-id':str(uuid.uuid4())})
         function = function.data
@@ -78,6 +91,9 @@ class TestFunction(unittest.TestCase):
         self.assertEqual(function['runtime'], runtime)
         self.assertEqual(function['handler'], 'main.my_handler')
         self.assertEqual(function['description'], desc)
+        if desc == u'test for initializer':
+            self.assertEqual(function['initializer'], initializer)
+            self.assertEqual(function['initializationTimeout'], 30)
 
         code = self.client.get_function_code(self.serviceName, functionName)
         code = code.data
@@ -135,6 +151,21 @@ class TestFunction(unittest.TestCase):
             self.client.update_function(self.serviceName, functionName, codeZipFile='test/hello_world/hello_world.zip', runtime = 10)
         self.client.delete_function(self.serviceName, functionName)
 
+        # test update function with initializer
+        functionName = 'test_update_with_initializer_' + ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
+        logging.info('Create function: {0}'.format(functionName))
+        self.client.create_function(
+            self.serviceName, functionName,
+            handler='main.my_handler', initializer='main.my_initializer' ,runtime='python2.7', codeDir='test/counter', environmentVariables={'testKey0':'testValue0', 'testKey1':'testValue1'})
+        desc = 'function description'
+        func = self.client.update_function(self.serviceName, functionName, codeDir='test/counter', initializationTimeout=60, description=desc, environmentVariables={'newTestKey':'newTestValue'})
+        etag = func.headers['etag']
+        self.assertNotEqual(etag, '')
+        func = func.data
+        self.assertEqual(func['description'], desc)
+        self.assertEqual(func['initializationTimeout'], 60)
+        self.assertEqual(func['environmentVariables'], {'newTestKey':'newTestValue'})
+        self.client.delete_function(self.serviceName, functionName)
 
     def _clear_list_function(self):
         prefix = 'test_list_'
@@ -233,6 +264,21 @@ class TestFunction(unittest.TestCase):
         self.assertEqual(len(functions), 1)
         self.assertTrue(functions[0]['functionName'], prefix + 'abd')
         self._clear_list_function()
+
+    def test_initialize(self):
+        functionName = 'test_invoke_counter_' + ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
+        logging.info('create function: {0}'.format(functionName))
+        self.client.create_function(
+            self.serviceName, functionName,
+            handler='main.my_handler', runtime='python2.7',
+            initializer='main.my_initializer',
+            codeZipFile='test/counter/counter.zip')
+
+        r = self.client.invoke_function(self.serviceName, functionName)
+        self.assertEqual(r.data.decode('utf-8'), '2')
+        r = self.client.invoke_function(self.serviceName, functionName)
+        self.assertEqual(r.data.decode('utf-8'), '3')
+        self.client.delete_function(self.serviceName, functionName)
 
     def test_invoke(self):
         helloWorld= 'test_invoke_hello_world_' + ''.join(random.choice(string.ascii_lowercase) for _ in range(8))

@@ -138,6 +138,10 @@ Getting started
     # set environment variables {'testKey': 'testValue'}
     client.create_function('service_name', 'function_name', 'python3',  'main.my_handler', codeZipFile = 'main.zip', environmentVariables = {'testKey': 'testValue'})
 
+    # Create function with initailizer
+    # main.my_initializer is the entry point of initializer interface
+    client.create_function('service_name', 'function_name', 'python3',  'main.my_handler', "main.my_initializer", codeZipFile = 'main.zip', environmentVariables = {'testKey': 'testValue'})
+
     # Invoke function synchronously.
     client.invoke_function('service_name', 'function_name')
 
