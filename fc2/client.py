@@ -22,6 +22,28 @@ elif _ver[0] == 3:
     from urllib.parse import unquote as unescape
 
 
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
+
+retries = 5
+backoff_factor = 1
+status_forcelist=(500, 502, 504)
+
+def requestWithTry(method, url, **kwargs):
+    with requests.Session() as session:
+        retry = Retry(
+            total=retries,
+            read=retries,
+            connect=retries,
+            backoff_factor=backoff_factor,
+            status_forcelist=status_forcelist,
+        )
+        adapter = HTTPAdapter(max_retries=retry)
+        session.mount('http://', adapter)
+        session.mount('https://', adapter)
+
+        return session.request(method=method, url=url, **kwargs)
+
 class Client(object):
     def __init__(self, **kwargs):
         endpoint = kwargs.get('endpoint', None)
@@ -89,13 +111,13 @@ class Client(object):
         headers = self._build_common_headers(method, unescape(path), headers, params)
         logging.debug(
             'Do http request. Method: {0}. URL: {1}. Params: {2}. Headers: {3}'.format(method, url, params, headers))
-        r = requests.request(method, url, headers=headers, params=params, data=body, timeout=self.timeout)
+        r = requestWithTry(method, url, headers=headers, params=params, data=body, timeout=self.timeout)
         return r
 
     def _do_request(self, method, path, headers, params=None, body=None):
         url = '{0}{1}'.format(self.endpoint, path)
         logging.debug('Perform http request. Method: {0}. URL: {1}. Headers: {2}'.format(method, url, headers))
-        r = requests.request(method, url, headers=headers, params=params, data=body, timeout=self.timeout)
+        r = requestWithTry(method, url, headers=headers, params=params, data=body, timeout=self.timeout)
 
         if r.status_code < 400:
             logging.debug(
