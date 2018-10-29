@@ -10,6 +10,7 @@ __version__ = '2.0.11'
 
 from .client import Client
 from .fc_exceptions import FcError
+from .proto import rdsEvent_pb2
 
 # Set default logging handler to avoid "No handler found" warnings.
 import logging
