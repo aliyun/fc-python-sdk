@@ -28,6 +28,8 @@ from requests.packages.urllib3.util.retry import Retry
 retries = 5
 backoff_factor = 1
 status_forcelist=(500, 502, 504)
+delimiter = '.'
+
 
 def requestWithTry(method, url, **kwargs):
     with requests.Session() as session:
@@ -319,7 +321,7 @@ class Client(object):
         """
         method = 'GET'
         if qualifier:
-            serviceName += '${0}'.format(qualifier)
+            serviceName += '{0}{1}'.format(delimiter, qualifier)
         path = '/{0}/services/{1}'.format(self.api_version, serviceName)
         headers = self._build_common_headers(method, path, headers)
 
@@ -622,7 +624,7 @@ class Client(object):
         """
         method = 'GET'
         if qualifier:
-            serviceName += '${0}'.format(qualifier)
+            serviceName += '{0}{1}'.format(delimiter, qualifier)
         path = '/{0}/services/{1}/functions/{2}'.format(self.api_version, serviceName, functionName)
         headers = self._build_common_headers(method, path, headers)
 
@@ -649,7 +651,7 @@ class Client(object):
         """
         method = 'GET'
         if qualifier:
-            serviceName += '${0}'.format(qualifier)
+            serviceName += '{0}{1}'.format(delimiter, qualifier)
         path = '/{0}/services/{1}/functions/{2}/code'.format(self.api_version, serviceName, functionName)
         headers = self._build_common_headers(method, path, headers)
 
@@ -695,7 +697,7 @@ class Client(object):
         """
         method = 'GET'
         if qualifier:
-            serviceName += '${0}'.format(qualifier)
+            serviceName += '{0}{1}'.format(delimiter, qualifier)
         path = '/{0}/services/{1}/functions'.format(self.api_version, serviceName)
         headers = self._build_common_headers(method, path, headers)
 
@@ -724,7 +726,7 @@ class Client(object):
         """
         method = 'POST'
         if qualifier:
-            serviceName += '${0}'.format(qualifier)
+            serviceName += '{0}{1}'.format(delimiter, qualifier)
         path = '/{0}/services/{1}/functions/{2}/invocations'.format(self.api_version, serviceName, functionName)
         headers = self._build_common_headers(method, path, headers)
 
