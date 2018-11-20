@@ -384,7 +384,7 @@ class TestVersioning(unittest.TestCase):
         r = self.client.invoke_function(self._test_service_name, functionName, qualifier="prod")
         self.assertEqual(r.data.decode('utf-8'), 'new hello world')
 
-    def test_trigger(self):
+    def dis_trigger(self):
         # use oss trigger as example
         functionName= 'test_function_' + ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
         desc = u'这是测试function'
