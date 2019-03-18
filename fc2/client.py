@@ -739,13 +739,14 @@ class Client(object):
 
         return FcHttpResponse(r.headers, r.content)
 
-    def create_trigger(self, serviceName, functionName, triggerName, triggerType, triggerConfig, sourceArn,
+    def create_trigger(self, serviceName, functionName, triggerName, description, triggerType, triggerConfig, sourceArn,
                        invocationRole, headers={}, qualifier=None):
         """
         Create a trigger.
         :param serviceName: (required, string), name of the service that the trigger belongs to.
         :param functionName: (required, string), name of the function that the trigger belongs to.
         :param triggerName: (required, string), name of the trigger.
+        :param description: (optional, string), description of trigger.
         :param triggerType: (required, string), the type of trigger. 'oss','log','timer'
         :param triggerConfig: (required, dict), the config of the trigger, different types of trigger has different config.
         :param sourceArn: (optional, string), Aliyun Resource Name（ARN）of the event.In addition to timetrigger, other trigger parameters are required
@@ -771,7 +772,7 @@ class Client(object):
         method = 'POST'
         path = '/{0}/services/{1}/functions/{2}/triggers'.format(self.api_version, serviceName, functionName)
         headers = self._build_common_headers(method, path, headers)
-        payload = {'triggerName': triggerName, 'triggerType': triggerType, 'triggerConfig': triggerConfig,
+        payload = {'triggerName': triggerName, 'description':description, 'triggerType': triggerType, 'triggerConfig': triggerConfig,
                    'sourceArn': sourceArn, 'invocationRole': invocationRole, 'qualifier': qualifier}
         r = self._do_request(method, path, headers, body=json.dumps(payload).encode('utf-8'))
         return FcHttpResponse(r.headers, r.json())
@@ -794,13 +795,14 @@ class Client(object):
         headers = self._build_common_headers(method, path, headers)
         self._do_request(method, path, headers)
 
-    def update_trigger(self, serviceName, functionName, triggerName, triggerConfig=None, invocationRole=None,
+    def update_trigger(self, serviceName, functionName, triggerName, description=None, triggerConfig=None, invocationRole=None,
                        headers={}, qualifier=None):
         """
         Update a trigger.
         :param serviceName: (required, string), name of the service that the trigger belongs to.
         :param functionName: (required, string), name of the function that the trigger belongs to.
         :param triggerName: (required, string), name of the trigger.
+        :param description: (optional, string), description of trigger.
         :param triggerConfig: (optional, dict), the config of the trigger, different types of trigger has different config.
         :param invocationRole: (optional, string), the role that event source uses to invoke the function.
         :param qualifier: (optional, string) qualifier of service.
@@ -827,6 +829,8 @@ class Client(object):
                                                                      triggerName)
         headers = self._build_common_headers(method, path, headers)
         payload = {}
+        if description:
+            payload['description'] = description;
         if triggerConfig:
             payload['triggerConfig'] = triggerConfig
         if invocationRole:
