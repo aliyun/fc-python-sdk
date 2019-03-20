@@ -111,13 +111,13 @@ class TestService(unittest.TestCase):
         # create
         # 200 ok
         logging.info('create trigger: {0}'.format(trigger_name))
-        create_trigger_resp = self.client.create_trigger(service_name, function_name, trigger_name, trigger_desc, trigger_type,
-                                                         trigger_config, source_arn, invocation_role).data
+        create_trigger_resp = self.client.create_trigger(service_name, function_name, trigger_name, trigger_type,
+                                                         trigger_config, source_arn, invocation_role, description=trigger_desc).data
         self.check_trigger_response(create_trigger_resp, trigger_name, trigger_desc, trigger_type, trigger_config, source_arn,
                                     invocation_role)
         # 404
         with self.assertRaises(fc2.FcError):
-            self.client.create_trigger(service_name + 'invalid', function_name, "", trigger_name, trigger_type,
+            self.client.create_trigger(service_name + 'invalid', function_name, trigger_name, trigger_type,
                                        trigger_config, source_arn, invocation_role)
 
         # get
@@ -145,7 +145,7 @@ class TestService(unittest.TestCase):
             }
         }
         logging.info('update trigger: {0}'.format(trigger_name))
-        update_trigger_resp = self.client.update_trigger(service_name, function_name, trigger_name, update_trigger_desc,
+        update_trigger_resp = self.client.update_trigger(service_name, function_name, trigger_name, description=update_trigger_desc,
                                                          triggerConfig=trigger_config_update, invocationRole=invocation_role).data
         self.check_trigger_response(update_trigger_resp, trigger_name, update_trigger_desc, trigger_type, trigger_config_update, source_arn,
                                     invocation_role)
@@ -204,14 +204,14 @@ class TestService(unittest.TestCase):
         # create
         # 200 ok
         logging.info('create trigger: {0}'.format(trigger_name))
-        create_trigger_resp = self.client.create_trigger(service_name, function_name, trigger_name, trigger_desc, trigger_type,
-                                                         trigger_config, source_arn, invocation_role).data
+        create_trigger_resp = self.client.create_trigger(service_name, function_name, trigger_name, trigger_type,
+                                                         trigger_config, source_arn, invocation_role, description=trigger_desc).data
         self.check_trigger_response(create_trigger_resp, trigger_name, trigger_desc, trigger_type, trigger_config, None,
                                     invocation_role)
 
         # 404
         with self.assertRaises(fc2.FcError):
-            self.client.create_trigger(service_name + 'invalid', function_name, trigger_name, "", trigger_type,
+            self.client.create_trigger(service_name + 'invalid', function_name, trigger_name, trigger_type,
                                        trigger_config, source_arn, invocation_role)
 
         # get
@@ -233,7 +233,7 @@ class TestService(unittest.TestCase):
         logging.info('update trigger: {0}'.format(trigger_name))
         update_http_trigger_desc = 'update http trigger'
 
-        update_trigger_resp = self.client.update_trigger(service_name, function_name, trigger_name, update_http_trigger_desc,
+        update_trigger_resp = self.client.update_trigger(service_name, function_name, trigger_name, description=update_http_trigger_desc,
                                                          triggerConfig=trigger_config_update, invocationRole=invocation_role).data
         self.assertEqual(update_trigger_resp['triggerConfig']['authType'], 'function')
         self.check_trigger_response(update_trigger_resp, trigger_name, update_http_trigger_desc, trigger_type, trigger_config_update,
@@ -303,8 +303,8 @@ class TestService(unittest.TestCase):
         # create
         # 200 ok
         logging.info('create trigger: {0}'.format(trigger_name))
-        create_trigger_resp = self.client.create_trigger(service_name, function_name, trigger_name, trigger_desc, trigger_type,
-                                                         trigger_config, source_arn, invocation_role).data
+        create_trigger_resp = self.client.create_trigger(service_name, function_name, trigger_name, trigger_type,
+                                                         trigger_config, source_arn, invocation_role, description=trigger_desc).data
         self.check_trigger_response(create_trigger_resp, trigger_name, trigger_desc, trigger_type, trigger_config, source_arn,
                                     invocation_role)
 
@@ -342,7 +342,7 @@ class TestService(unittest.TestCase):
         }
         logging.info('update trigger: {0}'.format(trigger_name))
         update_trigger_desc = 'update trigger'
-        update_trigger_resp = self.client.update_trigger(service_name, function_name, trigger_name, update_trigger_desc,
+        update_trigger_resp = self.client.update_trigger(service_name, function_name, trigger_name, description=update_trigger_desc,
                                                          triggerConfig=trigger_config_update, invocationRole=invocation_role).data
         
         self.assertEqual(update_trigger_resp['triggerConfig']['jobConfig']['triggerInterval'], 80)

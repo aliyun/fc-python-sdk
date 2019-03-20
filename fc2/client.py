@@ -739,8 +739,8 @@ class Client(object):
 
         return FcHttpResponse(r.headers, r.content)
 
-    def create_trigger(self, serviceName, functionName, triggerName, description, triggerType, triggerConfig, sourceArn,
-                       invocationRole, headers={}, qualifier=None):
+    def create_trigger(self, serviceName, functionName, triggerName, triggerType, triggerConfig, sourceArn,
+                       invocationRole, headers={}, qualifier=None, description=''):
         """
         Create a trigger.
         :param serviceName: (required, string), name of the service that the trigger belongs to.
