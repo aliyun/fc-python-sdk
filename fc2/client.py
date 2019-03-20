@@ -795,8 +795,8 @@ class Client(object):
         headers = self._build_common_headers(method, path, headers)
         self._do_request(method, path, headers)
 
-    def update_trigger(self, serviceName, functionName, triggerName, description=None, triggerConfig=None, invocationRole=None,
-                       headers={}, qualifier=None):
+    def update_trigger(self, serviceName, functionName, triggerName, triggerConfig=None, invocationRole=None,
+                       headers={}, qualifier=None, description=None):
         """
         Update a trigger.
         :param serviceName: (required, string), name of the service that the trigger belongs to.
