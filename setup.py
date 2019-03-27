@@ -27,7 +27,7 @@ setup(
     description='Aliyun FunctionCompute SDK2',
     long_description=readme,
     packages=['fc2'],
-    install_requires=['requests!=2.9.0'
+    install_requires=['requests>=2.20.0'
                       ],
     include_package_data=True,
     url='https://www.aliyun.com/product/fc',
