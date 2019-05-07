@@ -908,8 +908,9 @@ class Client(object):
         r = self._do_request(method, path, headers, params=params)
         return FcHttpResponse(r.headers, r.json())
 
-    def create_custom_domain(self, domainName, protocol=None, routeConfig=None, headers={}):
+    def create_custom_domain(self, domainName, protocol=None, routeConfig=None, headers={}, certConfig=None):
         """
+        ref: https://help.aliyun.com/document_detail/52877.html?spm=a2c4g.11186623.6.696.1e6d2d2dz4duTM#createCustomDomain
         Create a custom domain.
         :param domainName: name of the custom domain.
         :param protocol: (optional, string), HTTP.
@@ -931,7 +932,7 @@ class Client(object):
             'createdTime': 'string',
             'lastModifiedTime': 'string',
             'routeConfig': {
-                'routes': 'dict',
+                'routes': 'pathConfig array',
             },
             'protocol': 'string',
             'serviceId': 'string',
@@ -947,6 +948,8 @@ class Client(object):
             payload['protocol'] = protocol
         if routeConfig:
             payload['routeConfig'] = routeConfig
+        if certConfig:
+            payload['certConfig'] = certConfig
 
         r = self._do_request(method, path, headers, body=json.dumps(payload).encode('utf-8'))
         # 'etag' now in headers
@@ -967,7 +970,7 @@ class Client(object):
 
         self._do_request(method, path, headers)
 
-    def update_custom_domain(self, domainName, protocol=None, routeConfig=None, headers={}):
+    def update_custom_domain(self, domainName, protocol=None, routeConfig=None, headers={}, certConfig=None):
         """
         Update the custom domain attributes.
         :param domainName: name of the custom domain.
@@ -1005,6 +1008,8 @@ class Client(object):
             payload['protocol'] = protocol
         if routeConfig:
             payload['routeConfig'] = routeConfig
+        if certConfig:
+            payload['certConfig'] = certConfig
 
         r = self._do_request(method, path, headers, body=json.dumps(payload).encode('utf-8'))
         # 'etag' now in headers
