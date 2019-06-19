@@ -218,7 +218,7 @@ Getting started
 
 
 Testing
---------
+-------
 
 To run the tests, please set the access key id/secret, endpoint as environment variables.
 Take the Linux system for example:
