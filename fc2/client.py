@@ -147,6 +147,21 @@ class Client(object):
         err_msg = json.dumps(err_d)
         return fc_exceptions.get_fc_error(err_msg, r.status_code, err_code, err_d['RequestId'])
 
+    def get_account_settings(self):
+        """
+        :return FcHttpResponse
+        headers: dict {'etag':'string', ...}
+        data: dict
+        {
+            'availableAZs': ['zone-id']
+        }
+        """
+        method = 'GET'
+        path = '/{0}/account-settings'.format(self.api_version)
+        headers = self._build_common_headers(method, path, headers)
+        r = self._do_request(method, path, headers)
+        return FcHttpResponse(r.headers, r.json())
+
     def create_service(self, serviceName, description=None, logConfig=None, role=None, headers={}, internetAccess=None,
                        vpcConfig=None, nasConfig=None):
         """
