@@ -3,6 +3,8 @@ import logging
 import unittest
 import os
 import json
+import random
+import string
 
 
 class TestService(unittest.TestCase):
@@ -21,7 +23,7 @@ class TestService(unittest.TestCase):
         self.service_name = 'test_trigger_service'
         self.function_name = 'test_trigger_function'
         self.http_function_name = 'test_http_function'
-        self.trigger_name = 'test_trigger'
+        self.trigger_name = 'test_trigger' + ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
 
         self.client = fc2.Client(
             endpoint=self.endpoint,
