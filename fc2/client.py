@@ -150,7 +150,7 @@ class Client(object):
     def get_account_settings(self):
         """
         :return FcHttpResponse
-        headers: dict {'etag':'string', ...}
+        headers: dict
         data: dict
         {
             'availableAZs': ['zone-id']
