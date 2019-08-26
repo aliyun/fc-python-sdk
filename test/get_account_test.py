@@ -3,8 +3,6 @@ import os
 import fc2
 import logging
 
-
-
 class TestGetAccountSetting(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super(TestGetAccountSetting, self).__init__(*args, **kwargs)

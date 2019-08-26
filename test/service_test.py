@@ -21,6 +21,8 @@ class TestService(unittest.TestCase):
         self.groupId = os.environ['GROUP_ID']
         self.nasServerAddr = os.environ['NAS_SERVER_ADDR']
         self.nasMountDir = os.environ['NAS_MOUNT_DIR']
+        self.region = os.environ['REGION']
+        self.account_id = os.environ['ACCOUNT_ID']
         self.client = fc2.Client(
             endpoint=os.environ['ENDPOINT'],
             accessKeyID=os.environ['ACCESS_KEY_ID'],
@@ -182,26 +184,44 @@ class TestService(unittest.TestCase):
         prefix = 'test_list_'
         # Cleanup the resources.
         try:
+            resourceArn = "acs:fc:{0}:{1}:services/{2}".format(
+                 self.region, self.account_id, prefix + 'abc')
+            self.client.untag_resource(resourceArn, [], True)
             self.client.delete_service(prefix + 'abc')
         except:
             pass
         try:
+            resourceArn = "acs:fc:{0}:{1}:services/{2}".format(
+                self.region, self.account_id, prefix + 'abd')
+            self.client.untag_resource(resourceArn, [], True)
             self.client.delete_service(prefix + 'abd')
         except:
             pass
         try:
+            resourceArn = "acs:fc:{0}:{1}:services/{2}".format(
+                self.region, self.account_id, prefix + 'ade')
+            self.client.untag_resource(resourceArn, [], True)
             self.client.delete_service(prefix + 'ade')
         except:
             pass
         try:
+            resourceArn = "acs:fc:{0}:{1}:services/{2}".format(
+                self.region, self.account_id, prefix + 'bcd')
+            self.client.untag_resource(resourceArn, [], True)
             self.client.delete_service(prefix + 'bcd')
         except:
             pass
         try:
+            resourceArn = "acs:fc:{0}:{1}:services/{2}".format(
+                self.region, self.account_id, prefix + 'bde')
+            self.client.untag_resource(resourceArn, [], True)
             self.client.delete_service(prefix + 'bde')
         except:
             pass
         try:
+            resourceArn = "acs:fc:{0}:{1}:services/{2}".format(
+                self.region, self.account_id, prefix + 'zzz')
+            self.client.untag_resource(resourceArn, [], True)
             self.client.delete_service(prefix + 'zzz')
         except:
             pass
@@ -215,6 +235,15 @@ class TestService(unittest.TestCase):
         self.client.create_service(prefix + 'bcd')
         self.client.create_service(prefix + 'bde')
         self.client.create_service(prefix + 'zzz')
+        resourceArn = "acs:fc:{0}:{1}:services/{2}".format(
+            self.region, self.account_id, prefix + 'abc')
+        self.client.tag_resource(resourceArn, {"k1": "v1", "k3": "v3"})
+        resourceArn = "acs:fc:{0}:{1}:services/{2}".format(
+            self.region, self.account_id, prefix + 'abd')
+        self.client.tag_resource(resourceArn, {"k2": "v2", "k3": "v3"})
+        resourceArn = "acs:fc:{0}:{1}:services/{2}".format(
+            self.region, self.account_id, prefix + 'ade')
+        self.client.tag_resource(resourceArn, {"k1": "v1", "k3": "v4"})
 
         r = self.client.list_services(limit=2, startKey=prefix + 'b')
         r = r.data
@@ -250,6 +279,31 @@ class TestService(unittest.TestCase):
         self.assertEqual(len(services), 2)
         self.assertTrue(services[0]['serviceName'], prefix + 'abc')
         self.assertTrue(services[1]['serviceName'], prefix + 'abd')
+        
+        r = self.client.list_services(prefix=prefix + 'a', tags={"k3": "v3"})
+        r = r.data
+        services = r['services']
+        self.assertEqual(len(services), 2)
+        self.assertTrue(services[0]['serviceName'], prefix + 'abc')
+        self.assertTrue(services[1]['serviceName'], prefix + 'abd')
+        
+        r = self.client.list_services(prefix=prefix + 'a', tags={"k3": ""})
+        r = r.data
+        services = r['services']
+        self.assertEqual(len(services), 3)
+        
+        r = self.client.list_services(
+            prefix=prefix + 'a', tags={"k3": "v3", "k1": "v1"})
+        r = r.data
+        services = r['services']
+        self.assertEqual(len(services), 1)
+        self.assertTrue(services[0]['serviceName'], prefix + 'abc')
+        
+        r = self.client.list_services(
+            prefix=prefix + 'a', tags={"k3": "v3", "k1": "v1", "k2": "v2"})
+        r = r.data
+        services = r['services']
+        self.assertEqual(len(services), 0)
 
         # list services with prefix and startKey
         r = self.client.list_services(limit=2, prefix=prefix + 'ab', startKey=prefix + 'abd')
