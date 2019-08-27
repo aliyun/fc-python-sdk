@@ -343,7 +343,7 @@ class Client(object):
         r = self._do_request(method, path, headers)
         return FcHttpResponse(r.headers, r.json())
 
-    def list_services(self, limit=None, nextToken=None, prefix=None, startKey=None, headers={}):
+    def list_services(self, limit=None, nextToken=None, prefix=None, startKey=None, headers={}, tags=None):
         """
         List the services in the current account.
         :param limit: (optional, integer) the total number of the returned services.
@@ -382,6 +382,10 @@ class Client(object):
 
         paramlst = [('limit', limit), ('prefix', prefix), ('nextToken', nextToken), ('startKey', startKey)]
         params = dict((k, v) for k, v in paramlst if v)
+        
+        if tags:
+            for k, v in tags.items():
+                params["tag_" + k] = v
 
         r = self._do_request(method, path, headers, params=params)
         return FcHttpResponse(r.headers, r.json())
@@ -1337,7 +1341,85 @@ class Client(object):
         headers = self._build_common_headers(method, path, headers)
 
         self._do_request(method, path, headers)
+        
+    def tag_resource(self, resourceArn, tags, headers={}):
+        """
+        Tag on a resource, Currently only services are supported
+        :param resourceArn: (required string), Resource ARN. Either full ARN or partial ARN
+        :param tags:(required dict), A list of tag keys. At least 1 tag is required. At most 20. Tag key is required, but tag value is optional
+        :param headers, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, user define key value
+        :return: FcHttpResponse
+        headers: dict
+        data: dict, including all aliase information.
+        {
+            'requestId': 'string'
+        }
+        """
+        method = 'POST'
+        path = '/{0}/tag'.format(self.api_version)
+        headers = self._build_common_headers(method, path, headers)
+        payload = {
+            'resourceArn': resourceArn,
+            'tags': tags
+        }
+        r = self._do_request(method, path, headers, body=json.dumps(payload).encode('utf-8'))
+        return FcHttpResponse(r.headers, r.json())
+    
+    def untag_resource(self, resourceArn, tagKeys, deleteAll=False, headers={}):
+        """
+        unTag on a resource, Currently only services are supported
+        :param resourceArn: (required string), Resource ARN. Either full ARN or partial ARN
+        :param tagKeys:(optinal dict), A list of tag keys.
+        :param deletaAll: (optinal bool), when tagKeys is empty and deleteAll be True can take effect.
+        :param headers, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, user define key value
+        :return: FcHttpResponse
+        headers: dict
+        data: dict, including all aliase information.
+        {
+            'requestId': 'string'
+        }
+        """
+        method = 'DELETE'
+        path = '/{0}/tag'.format(self.api_version)
+        headers = self._build_common_headers(method, path, headers)
+        payload = {
+            'resourceArn': resourceArn,
+            'tagKeys': tagKeys,
+            'all': deleteAll
+        }
+        r = self._do_request(method, path, headers, body=json.dumps(payload).encode('utf-8'))
+        return FcHttpResponse(r.headers, r.json())
+     
+    def get_resource_tags(self, resourceArn,  headers={}):
+        """
+        get a resource's tags, Currently only services are supported
+        :param resourceArn: (required string), Resource ARN. Either full ARN or partial ARN
+        :param headers, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, user define key value
+        :return: FcHttpResponse
+        headers: dict
+        data: dict, including all aliase information.
+        {
+            "requestId": "rid",
+            "resourceArn": "acs:fc:cn-shanghai:1221968287646227:services/foo",
+            "tags": {
+                "key1": "value1",
+                "key2": ""
+            }
+        }
+        """
+        method = 'GET'
+        path = '/{0}/tag'.format(self.api_version)
+        headers = self._build_common_headers(method, path, headers)
 
+        params = {"resourceArn": resourceArn}
+        r = self._do_request(method, path, headers, params=params)
+        return FcHttpResponse(r.headers, r.json())
 
 class FcHttpResponse(object):
     def __init__(self, headers, data):

@@ -20,10 +20,13 @@ class TestService(unittest.TestCase):
         self.invocation_role_sls = os.environ['INVOCATION_ROLE_SLS']
         self.log_project = os.environ['LOG_PROJECT']
         self.log_store = os.environ['LOG_STORE']
-        self.service_name = 'test_trigger_service'
-        self.function_name = 'test_trigger_function'
+        self.service_name = 'test_trigger_service' + \
+            ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
+        self.function_name = 'test_trigger_function' + \
+            ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
         self.http_function_name = 'test_http_function'
-        self.trigger_name = 'test_trigger' + ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
+        self.trigger_name = 'test_trigger' + \
+            ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
 
         self.client = fc2.Client(
             endpoint=self.endpoint,
