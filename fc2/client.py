@@ -1421,6 +1421,43 @@ class Client(object):
         r = self._do_request(method, path, headers, params=params)
         return FcHttpResponse(r.headers, r.json())
 
+    def list_reserved_capacities(self, limit=None, nextToken=None, headers={}):
+        """
+        List the reserved capacities in the current account.
+        :param limit: (optional, integer) the total number of the returned reservedCapacities.
+        :param nextToken: (optional, string) continue listing the reservedCapacities from the previous point.
+        :param headers, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, user define key value
+        :return: FcHttpResponse
+        headers: dict
+        data: dict, including all reservedCapacities informations.
+        {
+            'reservedCapacities':
+            [
+                {
+                    'instanceId': 'string',
+                    'cu': 'int',
+                    'deadline': 'string',
+                    'createdTime': 'string',
+                    'lastModifiedTime': 'string',
+                    'isRefunded': 'string',
+                 },
+                ...
+            ],
+            'nextToken': 'string'
+        }
+        """
+        method = 'GET'
+        path = '/{0}/reservedCapacities'.format(self.api_version)
+        headers = self._build_common_headers(method, path, headers)
+
+        paramlst = [('limit', limit), ('nextToken', nextToken)]
+        params = dict((k, v) for k, v in paramlst if v)
+
+        r = self._do_request(method, path, headers, params=params)
+        return FcHttpResponse(r.headers, r.json())
+
 class FcHttpResponse(object):
     def __init__(self, headers, data):
         self._headers = headers
