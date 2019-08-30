@@ -2,6 +2,8 @@ import unittest
 import os
 import fc2
 import logging
+import random
+import string
 
 class TestTag(unittest.TestCase):
     def __init__(self, *args, **kwargs):
@@ -17,15 +19,22 @@ class TestTag(unittest.TestCase):
             accessKeyID=self.access_key_id,
             accessKeySecret=self.access_key_secret,
         )
+        self.prefix = "test_tag_"  + ''.join(random.choice(
+            string.ascii_lowercase) for _ in range(8))
+        
+    def setUp(self):
+        pass
 
-    def test_all_tag_op(self):
-        prefix = "test_tag_"
+    def tearDown(self):
+        prefix = self.prefix
         for i in range(3):
             try:
                 self.client.delete_service(prefix + str(i))
             except:
                 pass
-        
+
+    def test_all_tag_op(self):
+        prefix = self.prefix
         for i in range(3):
             self.client.create_service(prefix + str(i))
             resourceArn = "acs:fc:{0}:{1}:services/{2}".format(self.region, self.account_id, prefix + str(i))

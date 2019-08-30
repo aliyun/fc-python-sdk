@@ -3,7 +3,7 @@ import logging
 import unittest
 import os
 import json
-import random
+import random, uuid
 import string
 
 
@@ -20,11 +20,11 @@ class TestService(unittest.TestCase):
         self.invocation_role_sls = os.environ['INVOCATION_ROLE_SLS']
         self.log_project = os.environ['LOG_PROJECT']
         self.log_store = os.environ['LOG_STORE']
-        self.service_name = 'test_trigger_service' + \
-            ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
+        self.service_name = 'test_trigger_service' + str(uuid.uuid4())
         self.function_name = 'test_trigger_function' + \
             ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
-        self.http_function_name = 'test_http_function'
+        self.http_function_name = 'test_http_function' + \
+            ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
         self.trigger_name = 'test_trigger' + \
             ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
 
@@ -35,74 +35,42 @@ class TestService(unittest.TestCase):
         )
 
     def setUp(self):
-        for i in range(1, 5):
-            try:
-                self.client.delete_trigger(self.service_name, self.function_name, self.trigger_name + str(i))
-            except:
-                pass
         try:
-            self.client.delete_trigger(self.service_name, self.function_name, self.trigger_name)
-        except:
-            pass
-        try:
-            self.client.delete_trigger(self.service_name, self.http_function_name, self.trigger_name)
-        except:
-            pass
-        try:
-            self.client.delete_function(self.service_name, self.http_function_name)
-        except:
-            pass
-        try:
-            self.client.delete_function(self.service_name, self.function_name)
-        except:
-            pass
-        try:
-            self.client.delete_service(self.service_name)
+            self.tearDown()
         except:
             pass
         self.client.create_service(self.service_name)
         self.client.create_function(self.service_name, self.function_name, handler='main.my_handler',
                                     runtime='python2.7', codeZipFile='test/hello_world/hello_world.zip')
-        self.client.create_function(self.service_name, self.http_function_name, handler='main.wsgi_echo_handler',
+        r = self.client.create_function(self.service_name, self.http_function_name, handler='main.wsgi_echo_handler',
                                     runtime='python2.7', codeZipFile='test/hello_world/hello_world.zip')
 
     def tearDown(self):
-        for i in range(1, 5):
-            try:
-                self.client.delete_trigger(self.service_name, self.function_name, self.trigger_name + str(i))
-            except:
-                pass
-        try:
-            self.client.delete_trigger(self.service_name, self.function_name, self.trigger_name)
-        except:
-            pass
-        try:
-            self.client.delete_trigger(self.service_name, self.http_function_name, self.trigger_name)
-        except:
-            pass
-        try:
-            self.client.delete_function(self.service_name, self.http_function_name)
-        except:
-            pass
-        try:
-            self.client.delete_function(self.service_name, self.function_name)
-        except:
-            pass
-        try:
-            self.client.delete_service(self.service_name)
-        except:
-            pass
+        r = self.client.list_functions(self.service_name)
+        functions = r.data['functions']
+        for f in functions:
+          function_name = f['functionName']
+          triggers = self.client.list_triggers(
+              self.service_name, function_name).data['triggers']
+          for t in triggers:
+            trigger_name = t['triggerName']
+            self.client.delete_trigger(
+                self.service_name, function_name, trigger_name)
+          self.client.delete_function(self.service_name, function_name)
+        self.client.delete_service(self.service_name)
 
     def test_oss_trigger(self):
         service_name = self.service_name
         function_name = self.function_name
         trigger_type = 'oss'
-        trigger_name = self.trigger_name
+        trigger_name = self.trigger_name + "_oss"
         trigger_desc = 'create oss trigger'
         source_arn = 'acs:oss:{0}:{1}:{2}'.format(self.region, self.account_id, self.code_bucket)
         invocation_role = self.invocation_role
-        prefix = 'pre'
-        suffix = 'suf'
+        prefix = 'pre' + \
+            ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
+        suffix = 'suf' + \
+            ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
         trigger_config = {
             'events': ['oss:ObjectCreated:*'],
             'filter': {
@@ -196,14 +164,14 @@ class TestService(unittest.TestCase):
         service_name = self.service_name
         function_name = self.http_function_name
         trigger_type = 'http'
-        trigger_name = self.trigger_name
+        trigger_name = self.trigger_name + "_http"
         trigger_desc = 'create http trigger'
         source_arn = 'dummy_arn'
         invocation_role = ''
 
         trigger_config = {
-                'authType': 'anonymous',
-                'methods': ['GET'],
+            'authType': 'anonymous',
+            'methods': ['GET', 'POST', 'PUT'],
         }
 
         # create
@@ -213,7 +181,6 @@ class TestService(unittest.TestCase):
                                                          trigger_config, source_arn, invocation_role, description=trigger_desc).data
         self.check_trigger_response(create_trigger_resp, trigger_name, trigger_desc, trigger_type, trigger_config, None,
                                     invocation_role)
-
         # 404
         with self.assertRaises(fc2.FcError):
             self.client.create_trigger(service_name + 'invalid', function_name, trigger_name, trigger_type,
@@ -228,22 +195,6 @@ class TestService(unittest.TestCase):
         # 404
         with self.assertRaises(fc2.FcError):
             self.client.get_trigger(service_name + 'invalid', function_name, trigger_name)
-
-        # update
-        # 200 ok
-        trigger_config_update = {
-                'authType': 'function',
-                'methods': ['GET', 'POST'],
-        }
-        logging.info('update trigger: {0}'.format(trigger_name))
-        update_http_trigger_desc = 'update http trigger'
-
-        update_trigger_resp = self.client.update_trigger(service_name, function_name, trigger_name, triggerConfig=trigger_config_update,
-                                                         invocationRole=invocation_role, description=update_http_trigger_desc).data
-        self.assertEqual(update_trigger_resp['triggerConfig']['authType'], 'function')
-        self.check_trigger_response(update_trigger_resp, trigger_name, update_http_trigger_desc, trigger_type, trigger_config_update,
-                                    None,
-                                    invocation_role)
 
         headers = {
                 'Foo': 'Bar',
@@ -261,7 +212,22 @@ class TestService(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             self.client.do_http_request('GET', service_name, function_name, '/', params=123)
+    
+        # update 200 ok
+        trigger_config_update = {
+            'authType': 'function',
+            'methods': ['GET', 'POST'],
+        }
+        logging.info('update trigger: {0}'.format(trigger_name))
+        update_http_trigger_desc = 'update http trigger'
 
+        update_trigger_resp = self.client.update_trigger(service_name, function_name, trigger_name, triggerConfig=trigger_config_update,
+                                                         invocationRole=invocation_role, description=update_http_trigger_desc).data
+        self.assertEqual(
+            update_trigger_resp['triggerConfig']['authType'], 'function')
+        self.check_trigger_response(update_trigger_resp, trigger_name, update_http_trigger_desc, trigger_type, trigger_config_update,
+                                    None,
+                                    invocation_role)
         # 404 service not found
         with self.assertRaises(fc2.FcError):
             self.client.update_trigger(service_name + 'invalid', function_name, trigger_name,
@@ -282,7 +248,7 @@ class TestService(unittest.TestCase):
         service_name = self.service_name
         function_name = self.function_name
         trigger_type = 'log'
-        trigger_name = self.trigger_name
+        trigger_name = self.trigger_name + "_log"
         trigger_desc = 'create log trigger'
         source_arn = 'acs:log:{0}:{1}:project/{2}'.format(self.region, self.account_id, self.log_project)
         invocation_role = self.invocation_role_sls
