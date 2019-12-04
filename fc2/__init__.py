@@ -6,7 +6,7 @@ https://www.aliyun.com/product/fc
 """
 
 __author__ = 'Aliyun Function Compute'
-__version__ = '2.3.0'
+__version__ = '2.4.0'
 
 from .client import Client
 from .fc_exceptions import FcError

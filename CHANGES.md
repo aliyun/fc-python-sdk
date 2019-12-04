@@ -1,3 +1,9 @@
+
+2.4.0 / 2019-12-04
+==================
+
+  * support function instanceConcurrency (#65)
+
 ## Version 2.0.7
 
 * fix bug for auth signature
