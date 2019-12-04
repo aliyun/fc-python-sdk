@@ -65,6 +65,23 @@ class TestFunction(unittest.TestCase):
         function2 = function2.data
         self.assertEqual(function2['environmentVariables']['testKey'], 'testValue')
 
+    def test_instance_concurrency(self):
+        # test create function with instanceConcurrency
+        function_name= 'test_create_' + ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
+        desc = u'test for initializer'
+        resp = self.client.create_function(
+            self.serviceName, function_name,
+            handler='main.my_handler', runtime='nodejs10', codeDir='test/counter', initializer='main.my_initializer',
+            description=desc, environmentVariables={'testKey': 'testValue'}, instanceConcurrency=2)
+        self.assertEqual(2, resp.data['instanceConcurrency'])
+
+        # update function with instanceConcurrency
+        resp = self.client.update_function(self.serviceName, function_name, instanceConcurrency=10)
+        self.assertEqual(10, resp.data['instanceConcurrency'])
+
+        # delete the function
+        self.client.delete_function(self.serviceName, function_name)
+
     def check_function(self, function, functionName, desc, runtime = 'python2.7', initializer = None, initializationTimeout = None):
         etag = function.headers['etag']
         self.assertNotEqual(etag, '')

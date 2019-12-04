@@ -430,7 +430,8 @@ class Client(object):
             self, serviceName, functionName, runtime, handler,
             initializer=None, initializationTimeout=30,
             codeZipFile=None, codeDir=None, codeOSSBucket=None, codeOSSObject=None,
-            description=None, memorySize=256, timeout=60, headers={}, environmentVariables=None):
+            description=None, memorySize=256, timeout=60, headers={}, environmentVariables=None,
+            instanceConcurrency=None):
         """
         Create a function.
         :param serviceName: (required, string) the name of the service that the function belongs to.
@@ -447,6 +448,7 @@ class Client(object):
         :param timeout: (optional, integer) the max execution time of the function, in second.
         :param initializationTimeout: (optional, integer) the max execution time of the initializer, in second.
         :param environmentVariables: (optional, dict) the environment variables of the function, both key and value are string type.
+        :param instanceConcurrency: (optional, integer) the instance concurrency of the function
         :param headers, optional
             1, 'x-fc-trace-id': string (a uuid to do the request tracing)
             2, user define key value
@@ -523,6 +525,9 @@ class Client(object):
         if environmentVariables != None:
             payload['environmentVariables'] = environmentVariables
 
+        if instanceConcurrency != None:
+            payload['instanceConcurrency'] = instanceConcurrency
+
         r = self._do_request(method, path, headers,
                              body=json.dumps(payload).encode('utf-8'))
         # 'etag' now in headers
@@ -533,7 +538,7 @@ class Client(object):
             initializer=None, initializationTimeout=None,
             codeZipFile=None, codeDir=None, codeOSSBucket=None, codeOSSObject=None,
             description=None, handler=None, memorySize=None, runtime=None, timeout=None,
-            headers={}, environmentVariables=None):
+            headers={}, environmentVariables=None, instanceConcurrency=None):
         """
         Update the function.
         :param serviceName: (required, string) the name of the service that the function belongs to.
@@ -551,6 +556,7 @@ class Client(object):
         :param initializationTimeout: (optional, integer) the max execution time of the initializer, in second.
         :param etag: (optional, string) delete the service only when matched the given etag.
         :param environmentVariables: (optional, dict) the environment variables of the function, both key and value are string type.
+        :param instanceConcurrency: (optional, integer) the instance concurrency of the function
         :param headers, optional
             1, 'x-fc-trace-id': string (a uuid to do the request tracing)
             2, 'if-match': string (update the function only when matched the given etag.)
@@ -631,6 +637,9 @@ class Client(object):
 
         if environmentVariables != None:
             payload['environmentVariables'] = environmentVariables
+
+        if instanceConcurrency != None:
+            payload['instanceConcurrency'] = instanceConcurrency
 
         r = self._do_request(method, path, headers,
                              body=json.dumps(payload).encode('utf-8'))
