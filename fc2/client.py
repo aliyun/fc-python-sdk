@@ -431,7 +431,7 @@ class Client(object):
             initializer=None, initializationTimeout=30,
             codeZipFile=None, codeDir=None, codeOSSBucket=None, codeOSSObject=None,
             description=None, memorySize=256, timeout=60, headers={}, environmentVariables=None,
-            instanceConcurrency=None):
+            instanceConcurrency=None, customContainerConfig=None, caPort=None):
         """
         Create a function.
         :param serviceName: (required, string) the name of the service that the function belongs to.
@@ -478,12 +478,6 @@ class Client(object):
         initializer = str(initializer) if initializer else initializer
         initializationTimeout = int(
             initializationTimeout) if initializationTimeout else initializationTimeout
-        codeZipFile = str(codeZipFile) if codeZipFile else codeZipFile
-        codeDir = str(codeDir) if codeDir else codeDir
-        codeOSSBucket = str(codeOSSBucket) if codeOSSBucket else codeOSSBucket
-        codeOSSObject = str(codeOSSObject) if codeOSSObject else codeOSSObject
-        self._check_function_param_valid(
-            codeZipFile, codeDir, codeOSSBucket, codeOSSObject)
 
         method = 'POST'
         path = '/{0}/services/{1}/functions'.format(
@@ -492,20 +486,37 @@ class Client(object):
 
         payload = {'functionName': functionName,
                    'runtime': runtime, 'handler': handler}
-        if codeZipFile:
-            # codeZipFile has highest priority.
-            file = open(codeZipFile, 'rb')
-            data = file.read()
-            encoded = base64.b64encode(data).decode('utf-8')
-            payload['code'] = {'zipFile': encoded}
-        elif codeDir:
-            bytesIO = io.BytesIO()
-            util.zip_dir(codeDir, bytesIO)
-            encoded = base64.b64encode(bytesIO.getvalue()).decode('utf-8')
-            payload['code'] = {'zipFile': encoded}
+
+        if runtime != "custom-container":
+            codeZipFile = str(codeZipFile) if codeZipFile else codeZipFile
+            codeDir = str(codeDir) if codeDir else codeDir
+            codeOSSBucket = str(codeOSSBucket) if codeOSSBucket else codeOSSBucket
+            codeOSSObject = str(codeOSSObject) if codeOSSObject else codeOSSObject
+            self._check_function_param_valid(
+                codeZipFile, codeDir, codeOSSBucket, codeOSSObject)
+
+            if codeZipFile:
+                # codeZipFile has highest priority.
+                file = open(codeZipFile, 'rb')
+                data = file.read()
+                encoded = base64.b64encode(data).decode('utf-8')
+                payload['code'] = {'zipFile': encoded}
+            elif codeDir:
+                bytesIO = io.BytesIO()
+                util.zip_dir(codeDir, bytesIO)
+                encoded = base64.b64encode(bytesIO.getvalue()).decode('utf-8')
+                payload['code'] = {'zipFile': encoded}
+            else:
+                payload['code'] = {'ossBucketName': codeOSSBucket,
+                                'ossObjectName': codeOSSObject}
         else:
-            payload['code'] = {'ossBucketName': codeOSSBucket,
-                               'ossObjectName': codeOSSObject}
+            if not customContainerConfig:
+                raise Exception('customContainerConfig is required if runtime is custom-container')
+
+            payload['customContainerConfig'] = customContainerConfig
+
+        if runtime in ["custom", "custom-container"] and caPort:
+            payload['caPort'] = caPort
 
         if description:
             payload['description'] = description
@@ -538,7 +549,7 @@ class Client(object):
             initializer=None, initializationTimeout=None,
             codeZipFile=None, codeDir=None, codeOSSBucket=None, codeOSSObject=None,
             description=None, handler=None, memorySize=None, runtime=None, timeout=None,
-            headers={}, environmentVariables=None, instanceConcurrency=None):
+            headers={}, environmentVariables=None, instanceConcurrency=None, customContainerConfig=None, caPort=None):
         """
         Update the function.
         :param serviceName: (required, string) the name of the service that the function belongs to.
@@ -622,6 +633,12 @@ class Client(object):
         elif codeOSSBucket and codeOSSObject:
             payload['code'] = {'ossBucketName': codeOSSBucket,
                                'ossObjectName': codeOSSObject}
+
+        if customContainerConfig:
+            payload['customContainerConfig'] = customContainerConfig
+
+        if ((runtime and runtime in ["custom", "custom-container"]) or (not runtime)) and caPort:
+            payload['caPort'] = caPort
 
         if description:
             payload['description'] = description

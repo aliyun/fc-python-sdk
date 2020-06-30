@@ -71,6 +71,7 @@ class TestCustomDomain(unittest.TestCase):
             endpoint=self.endpoint,
             accessKeyID=self.access_key_id,
             accessKeySecret=self.access_key_secret,
+            Timeout = 180
         )
 
     def setUp(self):
@@ -158,7 +159,12 @@ class TestCustomDomain(unittest.TestCase):
         self.assertTrue('createdTime' in resp)
         self.assertTrue('lastModifiedTime' in resp)
         if route_config:
-            self.assertEqual(resp['routeConfig'], route_config)
+            respRoutes = resp['routeConfig']['routes']
+            routes = route_config['routes']
+            self.assertEqual(respRoutes[0]['serviceName'], routes[0]['serviceName'])
+            self.assertEqual(respRoutes[1]['serviceName'], routes[1]['serviceName'])
+            self.assertEqual(respRoutes[0]['path'], routes[0]['path'])
+            self.assertEqual(respRoutes[1]['path'], routes[1]['path'])
 
         if certConfig:
             self.assertEqual(resp['certConfig']['certName'], certConfig['certName'])
