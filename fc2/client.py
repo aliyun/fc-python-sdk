@@ -431,7 +431,7 @@ class Client(object):
             initializer=None, initializationTimeout=30,
             codeZipFile=None, codeDir=None, codeOSSBucket=None, codeOSSObject=None,
             description=None, memorySize=256, timeout=60, headers={}, environmentVariables=None,
-            instanceConcurrency=None, customContainerConfig=None, caPort=None):
+            instanceConcurrency=None, customContainerConfig=None, caPort=None, instanceType=None):
         """
         Create a function.
         :param serviceName: (required, string) the name of the service that the function belongs to.
@@ -478,6 +478,7 @@ class Client(object):
         initializer = str(initializer) if initializer else initializer
         initializationTimeout = int(
             initializationTimeout) if initializationTimeout else initializationTimeout
+        instanceType = str(instanceType) if instanceType else instanceType
 
         method = 'POST'
         path = '/{0}/services/{1}/functions'.format(
@@ -539,6 +540,9 @@ class Client(object):
         if instanceConcurrency != None:
             payload['instanceConcurrency'] = instanceConcurrency
 
+        if instanceType:
+            payload['instanceType'] = instanceType
+
         r = self._do_request(method, path, headers,
                              body=json.dumps(payload).encode('utf-8'))
         # 'etag' now in headers
@@ -549,7 +553,7 @@ class Client(object):
             initializer=None, initializationTimeout=None,
             codeZipFile=None, codeDir=None, codeOSSBucket=None, codeOSSObject=None,
             description=None, handler=None, memorySize=None, runtime=None, timeout=None,
-            headers={}, environmentVariables=None, instanceConcurrency=None, customContainerConfig=None, caPort=None):
+            headers={}, environmentVariables=None, instanceConcurrency=None, customContainerConfig=None, caPort=None, instanceType=None):
         """
         Update the function.
         :param serviceName: (required, string) the name of the service that the function belongs to.
@@ -594,6 +598,7 @@ class Client(object):
         serviceName, functionName = str(serviceName), str(functionName)
         handler = str(handler) if handler else handler
         initializer = str(initializer) if initializer else initializer
+        instanceType = str(instanceType) if instanceType else instanceType
         runtime = str(runtime) if runtime else runtime
         memorySize = int(memorySize) if memorySize else memorySize
         timeout = int(timeout) if timeout else timeout
@@ -657,6 +662,9 @@ class Client(object):
 
         if instanceConcurrency != None:
             payload['instanceConcurrency'] = instanceConcurrency
+
+        if instanceType:
+            payload['instanceType'] = instanceType
 
         r = self._do_request(method, path, headers,
                              body=json.dumps(payload).encode('utf-8'))
