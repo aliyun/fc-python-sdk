@@ -1638,6 +1638,134 @@ class Client(object):
         r = self._do_request(method, path, headers, params=params)
         return FcHttpResponse(r.headers, r.json())
 
+    def put_function_async_invoke_config(self, serviceName, qualifier, functionName, asyncConfig, headers={}):
+        """
+        put function async invoke config
+        :param serviceName: name of the service.
+        :param qualifier: name of the service's alias.
+        :param functionName: name of the funtion.
+        :param asyncConfig: config for async invocation
+        :param headers, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, user define key value
+        :return dict
+        {
+            "service": "service",
+            "function": "function",
+            "createTime": "",
+            "qualifier": "LATEST",
+            "destinationConfig": "",
+            "maxAsyncEventAgeInSeconds": 5000,
+            "maxAsyncRetryAttempts": 1,
+            "lastModifiedTime": ""
+        }
+        """
+        method = 'PUT'
+        path = '/{0}/services/{1}.{2}/functions/{3}/async-invoke-config'.format(
+            self.api_version, serviceName, qualifier, functionName)
+
+        headers = self._build_common_headers(method, path, headers)
+        payload = asyncConfig
+        r = self._do_request(method, path, headers,
+                             body=json.dumps(payload).encode('utf-8'))
+        return FcHttpResponse(r.headers, r.json())
+
+    def get_function_async_invoke_config(self, serviceName, qualifier, functionName, headers={}):
+        """
+        get function async invoke config
+        :param serviceName: name of the service.
+        :param qualifier: name of the service's alias.
+        :param functionName: name of the funtion.
+        :param headers, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, user define key value
+        :return dict
+        {
+            "service": "service",
+            "function": "function",
+            "createTime": "",
+            "qualifier": "LATEST",
+            "destinationConfig": "",
+            "maxAsyncEventAgeInSeconds": 5000,
+            "maxAsyncRetryAttempts": 1,
+            "lastModifiedTime": ""
+        }
+        """
+        method = 'GET'
+        path = '/{0}/services/{1}.{2}/functions/{3}/async-invoke-config'.format(
+            self.api_version, serviceName, qualifier, functionName)
+
+        headers = self._build_common_headers(method, path, headers)
+
+        r = self._do_request(method, path, headers)
+        return FcHttpResponse(r.headers, r.json())
+
+    def list_function_async_invoke_configs(self, serviceName, functionName, limit=None, nextToken=None, headers={}):
+        """
+        List the async configs for the current service and function.
+        :param serviceName: (optional, string), name of the service.
+        :param functionName: name of the funtion.
+        :param qualifier (optional, string): name of the service's alias.
+        :param limit: (optional, integer) the total number of the returned aliases.
+        :param nextToken: (optional, string) continue listing the aliase from the previous point.
+        :param headers, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, user define key value
+        :return: FcHttpResponse
+        headers: dict
+        data: dict
+        {
+            "configs": [
+                {
+                  "service": "destination-suite",
+                  "function": "function-py",
+                  "createdTime": "",
+                  "qualifier": "",
+                  "lastModifiedTime": "xxx",
+                  "destinationConfig": {
+                    "onSuccess": {
+                      "destination": "xxx"
+                    },
+                    "onFailure": {
+                      "destination": "xxx"
+                    }
+                  },
+                  "maxAsyncEventAgeInSeconds": 5,
+                  "maxAsyncRetryAttempts": 0
+                }
+            ],
+            "nextToken": ""
+        }
+        """
+        method = 'GET'
+        path = '/{0}/services/{1}/functions/{2}/async-invoke-configs'.format(
+            self.api_version, serviceName, functionName)
+        headers = self._build_common_headers(method, path, headers)
+
+        paramlst = [('limit', limit), ('nextToken', nextToken)]
+        params = dict((k, v) for k, v in paramlst if v)
+
+        r = self._do_request(method, path, headers, params=params)
+        return FcHttpResponse(r.headers, r.json())
+
+    def delete_function_async_invoke_config(self, serviceName, qualifier, functionName, headers={}):
+        """
+        delete function async invoke config
+        :param serviceName: name of the service.
+        :param qualifier: name of the service's alias.
+        :param functionName: name of the funtion.
+        :param headers, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, user define key value
+        """
+        method = 'DELETE'
+        path = '/{0}/services/{1}.{2}/functions/{3}/async-invoke-config'.format(
+            self.api_version, serviceName, qualifier, functionName)
+
+        headers = self._build_common_headers(method, path, headers)
+
+        self._do_request(method, path, headers)
+
 class FcHttpResponse(object):
     def __init__(self, headers, data):
         self._headers = headers
