@@ -65,6 +65,16 @@ class TestFunction(unittest.TestCase):
         function2 = function2.data
         self.assertEqual(function2['environmentVariables']['testKey'], 'testValue')
 
+        # test create function with instanceType
+        functionName3 = 'test_create_' + ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
+        desc3 = u'test for InstanceType'
+        function3 = self.client.create_function(
+            self.serviceName, functionName3,
+            handler='main.my_handler', runtime='python2.7', codeDir='test/hello_world', description=desc3, environmentVariables={'testKey': 'testValue'}, instanceType="ElasticInstance")
+        self.check_function(function3, functionName3, desc3, 'python2.7')
+        function3 = function3.data
+        self.assertEqual(function3['environmentVariables']['testKey'], 'testValue')
+
     def test_instance_concurrency(self):
         # test create function with instanceConcurrency
         function_name= 'test_create_' + ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
@@ -90,6 +100,7 @@ class TestFunction(unittest.TestCase):
         self.assertEqual(function['runtime'], runtime)
         self.assertEqual(function['handler'], 'main.my_handler')
         self.assertEqual(function['description'], desc)
+        self.assertEqual(function['instanceType'], "ElasticInstance")
         self.assertTrue('codeChecksum' in function)
         self.assertTrue('codeSize' in function)
         self.assertTrue('createdTime' in function)
