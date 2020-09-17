@@ -81,7 +81,7 @@ class TestService(unittest.TestCase):
         self.client.delete_service(name)
 
     def test_vpcConfig(self):
-        name = 'test_vpcConfig'
+        name = 'test_vpcConfig' + ''.join(random.sample(string.ascii_letters + string.digits, 8))
         try:
             self.client.delete_service(name)
         except:

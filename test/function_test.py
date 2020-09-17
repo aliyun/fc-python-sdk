@@ -70,7 +70,8 @@ class TestFunction(unittest.TestCase):
         desc3 = u'test for InstanceType'
         function3 = self.client.create_function(
             self.serviceName, functionName3,
-            handler='main.my_handler', runtime='python2.7', codeDir='test/hello_world', description=desc3, environmentVariables={'testKey': 'testValue'}, instanceType="ElasticInstance")
+            handler='main.my_handler', runtime='python2.7', codeDir='test/hello_world',
+            description=desc3, environmentVariables={'testKey': 'testValue'}, instanceType="e1")
         self.check_function(function3, functionName3, desc3, 'python2.7')
         function3 = function3.data
         self.assertEqual(function3['environmentVariables']['testKey'], 'testValue')
@@ -100,7 +101,7 @@ class TestFunction(unittest.TestCase):
         self.assertEqual(function['runtime'], runtime)
         self.assertEqual(function['handler'], 'main.my_handler')
         self.assertEqual(function['description'], desc)
-        self.assertEqual(function['instanceType'], "ElasticInstance")
+        self.assertEqual(function['instanceType'], "e1")
         self.assertTrue('codeChecksum' in function)
         self.assertTrue('codeSize' in function)
         self.assertTrue('createdTime' in function)
