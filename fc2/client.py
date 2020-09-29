@@ -1545,7 +1545,117 @@ class Client(object):
 
         r = self._do_request(method, path, headers, params=params)
         return FcHttpResponse(r.headers, r.json())
-    
+
+    def put_on_demand_config(self, serviceName, alias, functionName, maximumInstanceCount, headers={}):
+        """
+        put on demand config
+        :param service_name: name of the service.
+        :param alias: name of the service's alias.
+        :param functionName: name of the funtion.
+        :param maximumInstanceCount: maximumInstanceCount
+        :param headers, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, 'if-match': string (delete the service only when matched the given etag.)
+            3, user define key value
+        :return dict
+        {
+            "resource": "services/serviceName.alias/functions/functionName",
+            "maximumInstanceCount": 10
+        }
+        """
+        method = 'PUT'
+        path = '/{0}/services/{1}.{2}/functions/{3}/on-demand-config'.format(
+            self.api_version, serviceName, alias, functionName)
+
+        headers = self._build_common_headers(method, path, headers)
+        payload = {
+            'maximumInstanceCount': maximumInstanceCount,
+        }
+        r = self._do_request(method, path, headers,
+                             body=json.dumps(payload).encode('utf-8'))
+        return FcHttpResponse(r.headers, r.json())
+
+    def get_on_demand_config(self, serviceName, alias, functionName, headers={}):
+        """
+        get on demand config
+        :param service_name: name of the service.
+        :param alias: name of the service's alias.
+        :param functionName: name of the funtion.
+        :param headers, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, 'if-match': string (delete the service only when matched the given etag.)
+            3, user define key value
+        :return dict
+        {
+            "resource": "services/serviceName.alias/functions/functionName",
+            "maximumInstanceCount": 10
+        }
+        """
+        method = 'GET'
+        path = '/{0}/services/{1}.{2}/functions/{3}/on-demand-config'.format(
+            self.api_version, serviceName, alias, functionName)
+
+        headers = self._build_common_headers(method, path, headers)
+        r = self._do_request(method, path, headers)
+        return FcHttpResponse(r.headers, r.json())
+
+    def delete_on_demand_config(self, serviceName, alias, functionName, headers={}):
+        """
+        delete on demand config
+        :param service_name: name of the service.
+        :param alias: name of the service's alias.
+        :param functionName: name of the funtion.
+        :param maximumInstanceCount: maximumInstanceCount
+        :param headers, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, 'if-match': string (delete the service only when matched the given etag.)
+            3, user define key value
+        """
+        method = 'DELETE'
+        path = '/{0}/services/{1}.{2}/functions/{3}/on-demand-config'.format(
+            self.api_version, serviceName, alias, functionName)
+
+        headers = self._build_common_headers(method, path, headers)
+        r = self._do_request(method, path, headers)
+        return FcHttpResponse(r.headers, None)
+
+    def list_on_demand_config(self, limit=100, nextToken=None, prefix=None, startKey=None, headers={}):
+        """
+        list on demand config
+        :param limit: (optional, integer) the total number of the returned configs.
+        :param nextToken: (optional, string) continue listing the configs from the previous point.
+        :param prefix: (optional, string) list the resource with the given prefix.
+        :param startKey: (optional, string) startKey is where you want to start listing from.
+        :param headers, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, 'if-match': string (delete the service only when matched the given etag.)
+            3, user define key value
+        :return dict
+        {
+            "configs": [
+                {
+                    "resource": "services/serviceName1.qualifier1/functions/functionName1",
+                    "maximumInstanceCount": 5
+                },
+                {
+                    "resource": "services/serviceName2.qualifier1/functions/functionName2",
+                    "maximumInstanceCount": 10
+                }
+            ],
+            "nextToken": "token"
+        }
+        """
+        method = 'GET'
+        path = '/{0}/on-demand-configs'.format(self.api_version)
+
+        paramlst = [('limit', limit), ('prefix', prefix),
+                    ('nextToken', nextToken), ('startKey', startKey)]
+        params = dict((k, v) for k, v in paramlst if v)
+
+        headers = self._build_common_headers(method, path, headers)
+        r = self._do_request(method, path, headers, params=params)
+        return FcHttpResponse(r.headers, r.json())
+
     def put_provision_config(self, serviceName, qualifier, functionName, target, headers={}):
         """
         put provision config
@@ -1560,13 +1670,13 @@ class Client(object):
         :return dict
         {
             "resource": "123456#service555#alias#testf1",
-            "target": 10 
+            "target": 10
         }
         """
         method = 'PUT'
         path = '/{0}/services/{1}.{2}/functions/{3}/provision-config'.format(
             self.api_version, serviceName, qualifier, functionName)
-        
+
         headers = self._build_common_headers(method, path, headers)
         payload = {
             'target': target,
@@ -1574,7 +1684,7 @@ class Client(object):
         r = self._do_request(method, path, headers,
                              body=json.dumps(payload).encode('utf-8'))
         return FcHttpResponse(r.headers, r.json())
-    
+
     def get_provision_config(self, serviceName, qualifier, functionName, headers={}):
         """
         get provision config
@@ -1594,12 +1704,12 @@ class Client(object):
         method = 'GET'
         path = '/{0}/services/{1}.{2}/functions/{3}/provision-config'.format(
             self.api_version, serviceName, qualifier, functionName)
-        
+
         headers = self._build_common_headers(method, path, headers)
 
         r = self._do_request(method, path, headers)
         return FcHttpResponse(r.headers, r.json())
-    
+
     def list_provision_configs(self, serviceName, qualifier,  limit=None, nextToken=None, headers={}):
         """
         List the provision configin the current service.
