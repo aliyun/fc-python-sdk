@@ -174,7 +174,7 @@ class Client(object):
         return FcHttpResponse(r.headers, r.json())
 
     def create_service(self, serviceName, description=None, logConfig=None, role=None, headers={}, internetAccess=None,
-                       vpcConfig=None, nasConfig=None):
+                       vpcConfig=None, nasConfig=None, tracingConfig=None):
         """
         Create a service.
         :param serviceName: name of the service.
@@ -206,6 +206,11 @@ class Client(object):
                 }
              ],
         }
+        :param tracingConfig, (optional, dict), tracing configuration
+        {
+            "type": string, Supported: Jaeger.
+            "params": dict,
+         }
         :param traceId:(optional, string) a uuid to do the request tracing.
         :return: FcHttpResponse
         headers: dict {'etag':'string', ...}
@@ -238,6 +243,8 @@ class Client(object):
             payload['internetAccess'] = internetAccess
         if nasConfig:
             payload['nasConfig'] = nasConfig
+        if tracingConfig:
+            payload['tracingConfig'] = tracingConfig
 
         r = self._do_request(method, path, headers,
                              body=json.dumps(payload).encode('utf-8'))
@@ -261,7 +268,7 @@ class Client(object):
         self._do_request(method, path, headers)
 
     def update_service(self, serviceName, description=None, logConfig=None, role=None, headers={}, internetAccess=None,
-                       vpcConfig=None, nasConfig=None):
+                       vpcConfig=None, nasConfig=None, tracingConfig=None):
         """
         Update the service attributes.
         :param serviceName: name of the service.
@@ -296,6 +303,11 @@ class Client(object):
                 }
              ],
         }
+        :param tracingConfig, (optional, dict), tracing configuration
+        {
+            "type": string, Supported: Jaeger.
+            "params": dict,
+         }
         :return: FcHttpResponse
         headers: dict {'etag':'string', ...}
         data:dict. For more information, see: https://help.aliyun.com/document_detail/52877.html#createservice
@@ -323,12 +335,14 @@ class Client(object):
             payload['logConfig'] = logConfig
         if role:
             payload['role'] = role
-        if internetAccess != None:
+        if internetAccess is not None:
             payload['internetAccess'] = internetAccess
         if vpcConfig:
             payload['vpcConfig'] = vpcConfig
         if nasConfig:
             payload['nasConfig'] = nasConfig
+        if tracingConfig is not None:
+            payload['tracingConfig'] = tracingConfig
 
         r = self._do_request(method, path, headers,
                              body=json.dumps(payload).encode('utf-8'))
