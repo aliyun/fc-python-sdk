@@ -24,27 +24,7 @@ elif _ver[0] == 3:
     from urllib.parse import unquote as unescape
 
 
-retries = 5
-backoff_factor = 1
-status_forcelist = (500, 502, 504)
 delimiter = '.'
-
-
-def requestWithTry(method, url, **kwargs):
-    with requests.Session() as session:
-        retry = Retry(
-            total=retries,
-            read=retries,
-            connect=retries,
-            backoff_factor=backoff_factor,
-            status_forcelist=status_forcelist,
-        )
-        adapter = HTTPAdapter(max_retries=retry)
-        session.mount('http://', adapter)
-        session.mount('https://', adapter)
-
-        return session.request(method=method, url=url, **kwargs)
-
 
 class Client(object):
     def __init__(self, **kwargs):
@@ -70,6 +50,8 @@ class Client(object):
                    platform.system(), platform.release(), platform.machine())
         self.auth = auth.Auth(access_key_id, access_key_secret, security_token)
         self.timeout = kwargs.get('Timeout', 60)
+        self.session = requests.Session()
+        self.init_session()
 
     @staticmethod
     def _normalize_endpoint(url):
@@ -119,7 +101,7 @@ class Client(object):
             method, unescape(path), headers, params)
         logging.debug(
             'Do http request. Method: {0}. URL: {1}. Params: {2}. Headers: {3}'.format(method, url, params, headers))
-        r = requestWithTry(method, url, headers=headers,
+        r = self.requestWithTry(method, url, headers=headers,
                            params=params, data=body, timeout=self.timeout)
         return r
 
@@ -127,7 +109,7 @@ class Client(object):
         url = '{0}{1}'.format(self.endpoint, path)
         logging.debug('Perform http request. Method: {0}. URL: {1}. Headers: {2}'.format(
             method, url, headers))
-        r = requestWithTry(method, url, headers=headers,
+        r = self.requestWithTry(method, url, headers=headers,
                            params=params, data=body, timeout=self.timeout)
 
         if r.status_code < 400:
@@ -1876,6 +1858,24 @@ class Client(object):
 
         self._do_request(method, path, headers)
 
+    def init_session(self):
+        retries = 5
+        backoff_factor = 1
+        status_forcelist = (500, 502, 504)
+
+        retry = Retry(
+            total=retries,
+            read=retries,
+            connect=retries,
+            backoff_factor=backoff_factor,
+            status_forcelist=status_forcelist,
+        )
+        adapter = HTTPAdapter(max_retries=retry)
+        self.session.mount('http://', adapter)
+        self.session.mount('https://', adapter)
+
+    def requestWithTry(self, method, url, **kwargs):
+        return self.session.request(method=method, url=url, **kwargs)
 class FcHttpResponse(object):
     def __init__(self, headers, data):
         self._headers = headers
