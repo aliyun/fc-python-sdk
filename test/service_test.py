@@ -23,6 +23,7 @@ class TestService(unittest.TestCase):
         self.nasMountDir = os.environ['NAS_MOUNT_DIR']
         self.region = os.environ['REGION']
         self.account_id = os.environ['ACCOUNT_ID']
+        self.jaeger_endpoint = os.environ['JAEGER_ENDPOINT']
         self.client = fc2.Client(
             endpoint=os.environ['ENDPOINT'],
             accessKeyID=os.environ['ACCESS_KEY_ID'],
@@ -179,13 +180,55 @@ class TestService(unittest.TestCase):
         self.assertEqual(service['nasConfig']['groupId'], -1)
         self.client.delete_service(name)
 
+    def test_tracingConfig(self):
+        name = 'test_tracingConfig' + ''.join(random.sample(string.ascii_letters + string.digits, 8))
+        tracingJaegerType = 'Jaeger'
+        try:
+            self.client.delete_service(name)
+        except:
+            pass
+        tracingConfig = {
+            'type': tracingJaegerType,
+            'params': {'endpoint': self.jaeger_endpoint}
+        }
+
+        # create service with tracingConfig
+        service = self.client.create_service(name, role=self.vpcRole, tracingConfig=tracingConfig).data
+        self.assertEqual(service['serviceName'], name)
+        self.assertTrue('createdTime' in service)
+        self.assertTrue('lastModifiedTime' in service)
+        self.assertTrue('logConfig' in service)
+        self.assertTrue('role' in service)
+        self.assertTrue('serviceId' in service)
+        self.assertEqual(service['tracingConfig']['type'], tracingJaegerType)
+        self.assertEqual(service['tracingConfig']['params']['endpoint'], self.jaeger_endpoint)
+
+        # get service with tracingConfig
+        gservice = self.client.get_service(name).data
+        self.assertEqual(service['serviceName'], name)
+        self.assertTrue('createdTime' in gservice)
+        self.assertTrue('lastModifiedTime' in gservice)
+        self.assertTrue('logConfig' in gservice)
+        self.assertTrue('role' in gservice)
+        self.assertTrue('serviceId' in gservice)
+        self.assertEqual(gservice['tracingConfig']['type'], tracingJaegerType)
+        self.assertEqual(gservice['tracingConfig']['params']['endpoint'], self.jaeger_endpoint)
+
+        # update service with disable tracingConfig
+        uservice = self.client.update_service(name, tracingConfig={}).data
+        self.assertEqual(uservice['serviceName'], name)
+        self.assertIsNone(uservice['tracingConfig']['type'])
+        self.assertIsNone(uservice['tracingConfig']['params'])
+
+        self.client.delete_service(name)
+
     def _clear_list_service(self):
         # Use the prefix to isolate the services.
         prefix = 'test_list_'
         # Cleanup the resources.
         try:
             resourceArn = "acs:fc:{0}:{1}:services/{2}".format(
-                 self.region, self.account_id, prefix + 'abc')
+                self.region, self.account_id, prefix + 'abc')
             self.client.untag_resource(resourceArn, [], True)
             self.client.delete_service(prefix + 'abc')
         except:
@@ -279,26 +322,26 @@ class TestService(unittest.TestCase):
         self.assertEqual(len(services), 2)
         self.assertTrue(services[0]['serviceName'], prefix + 'abc')
         self.assertTrue(services[1]['serviceName'], prefix + 'abd')
-        
+
         r = self.client.list_services(prefix=prefix + 'a', tags={"k3": "v3"})
         r = r.data
         services = r['services']
         self.assertEqual(len(services), 2)
         self.assertTrue(services[0]['serviceName'], prefix + 'abc')
         self.assertTrue(services[1]['serviceName'], prefix + 'abd')
-        
+
         r = self.client.list_services(prefix=prefix + 'a', tags={"k3": ""})
         r = r.data
         services = r['services']
         self.assertEqual(len(services), 3)
-        
+
         r = self.client.list_services(
             prefix=prefix + 'a', tags={"k3": "v3", "k1": "v1"})
         r = r.data
         services = r['services']
         self.assertEqual(len(services), 1)
         self.assertTrue(services[0]['serviceName'], prefix + 'abc')
-        
+
         r = self.client.list_services(
             prefix=prefix + 'a', tags={"k3": "v3", "k1": "v1", "k2": "v2"})
         r = r.data
