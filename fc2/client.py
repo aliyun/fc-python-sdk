@@ -183,6 +183,8 @@ class Client(object):
         {
             'project': 'string',
             'logStore': 'string',
+            'enableRequestMetrics' : 'bool',
+            'enableInstanceMetrics' : 'bool'
         }
         :param role: The Aliyun Resource Name (ARN) of the RAM role that FunctionCompute assumes when it executes
         your function to access any other Aliyun resources.
@@ -222,6 +224,8 @@ class Client(object):
             'logConfig': {
                 'project': 'string',
                 'log_store': 'string',
+                'enableRequestMetrics' : 'bool',
+                'enableInstanceMetrics' : 'bool'
             },
             'role': 'string',
             'serviceId': 'string',
@@ -277,6 +281,8 @@ class Client(object):
         {
             'project': 'string',
             'logStore': 'string',
+            'enableRequestMetrics': 'bool',
+            'enableInstanceMetrics': 'bool'
         }
         :param role: The Aliyun Resource Name (ARN) of the RAM role that FunctionCompute assumes when it executes
         your function to access any other Aliyun resources.
@@ -318,6 +324,8 @@ class Client(object):
             'logConfig': {
                 'project': 'string',
                 'log_store': 'string',
+                'enableRequestMetrics': 'bool',
+                'enableInstanceMetrics': 'bool'
             },
             'role': 'string',
             'serviceId': 'string',
@@ -393,6 +401,8 @@ class Client(object):
                     'logConfig': {
                         'project': 'string',
                         'log_store': 'string',
+                        'enableRequestMetrics' : 'bool',
+                        'enableInstanceMetrics' : 'bool'
                     },
                     'role': 'string',
                     'serviceId': 'string',
