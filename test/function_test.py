@@ -335,6 +335,28 @@ class TestFunction(unittest.TestCase):
         self.assertEqual(imghdr.what('/tmp/serverless.png'), 'png')
         self.client.delete_function(self.serviceName, imageProcess)
 
+        # custom runtime error exception
+        custom_go_error = 'test_invoke_custom_go_error_' + ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
+        logging.info('create function: {0}'.format(custom_go_error))
+        self.client.create_function(
+            self.serviceName, custom_go_error,
+            handler='main.handler', runtime='custom', codeZipFile='test/custom_go_raise_error/custom_go_raise_error.zip'
+        )
+
+        # expect error response from invocation
+        with self.assertRaises(fc2.FcError) as em:
+            self.client.invoke_function(self.serviceName, custom_go_error)
+
+        self.assertIn('RequestId', em.exception.message)
+        self.assertIn('ErrorCode', em.exception.message)
+        self.assertIn('ErrorMessage', em.exception.message)
+        self.assertIn('ErrorType', em.exception.message)
+
+        self.assertEqual(em.exception.status_code, 200)
+        self.assertNotEqual('', em.exception.request_id)
+
+        self.client.delete_function(self.serviceName, custom_go_error)
+
     def test_sts(self):
         helloWorld= 'test_invoke_hello_world_' + ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
         logging.info('create function: {0}'.format(helloWorld))

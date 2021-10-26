@@ -152,7 +152,19 @@ class Client(object):
         return r
 
     def __gen_request_err(self, r):
-        err_d = r.json()
+        try:
+            err_d = r.json()
+        except json.JSONDecodeError:
+            err_d = {
+                'ErrorMessage': r.text,
+                'ErrorType': r.headers.get('x-fc-error-type', ''),
+                'RequestId': r.headers.get('X-Fc-Request-Id', 'unknown'),
+                'ErrorCode': r.headers.get('ErrorCode', '')
+            }
+            err_code = err_d.get('ErrorCode', '')
+            err_msg = json.dumps(err_d)
+            return fc_exceptions.get_fc_error(err_msg, r.status_code, err_code, err_d['RequestId'])
+
         err_d['RequestId'] = r.headers.get('X-Fc-Request-Id', 'unknown')
         err_code = err_d.get('ErrorCode', '')
         err_msg = json.dumps(err_d)
@@ -840,8 +852,12 @@ class Client(object):
 
         r = self._do_request(method, path, headers, body=payload)
         if r.headers.get('x-fc-error-type', ''):
-            errmsg = 'Function execution error: {0}. Path: {1}. Headers: {2}'.format(
-                r.json(), path, r.headers)
+            # For custom runtime Error exception
+            try:
+                errmsg = 'Function execution error: {0}. Path: {1}. Headers: {2}'.format(
+                    r.json(), path, r.headers)
+            except json.JSONDecodeError:
+                errmsg = 'Function execution error. Path: {0}. Headers: {1}'.format(path, r.headers)
             logging.error(errmsg)
             raise self.__gen_request_err(r)
 
