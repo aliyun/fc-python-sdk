@@ -9,6 +9,9 @@ import json
 import logging
 import platform
 import sys
+import websocket
+from urllib.parse import quote
+import threading
 
 import requests
 
@@ -28,6 +31,17 @@ retries = 5
 backoff_factor = 1
 status_forcelist = (500, 502, 504)
 delimiter = '.'
+
+
+def makeQuery(queries):
+    array = []
+    for key, item in queries.items():
+        k = quote(str(key))
+        if type(item) != list:
+            item = [item]
+        for value in item:
+            array.append(k + '=' + quote(str(value)))
+    return '&'.join(array)
 
 
 def requestWithTry(method, url, **kwargs):
@@ -169,6 +183,24 @@ class Client(object):
         err_code = err_d.get('ErrorCode', '')
         err_msg = json.dumps(err_d)
         return fc_exceptions.get_fc_error(err_msg, r.status_code, err_code, err_d['RequestId'])
+
+    def websocket(self, url, queries={}, headers={}):
+        header = self._build_common_headers(
+            "GET", url, headers
+        )
+        del header["host"]
+
+        url = '{0}{1}?{2}'.format(
+            self.endpoint.replace("http", "ws"),
+            url, makeQuery(queries)
+        )
+
+        ws = websocket.WebSocketApp(
+            url,
+            header=header,
+        )
+
+        return ws
 
     def get_account_settings(self,  headers={}):
         """
@@ -527,8 +559,10 @@ class Client(object):
         if runtime != "custom-container":
             codeZipFile = str(codeZipFile) if codeZipFile else codeZipFile
             codeDir = str(codeDir) if codeDir else codeDir
-            codeOSSBucket = str(codeOSSBucket) if codeOSSBucket else codeOSSBucket
-            codeOSSObject = str(codeOSSObject) if codeOSSObject else codeOSSObject
+            codeOSSBucket = str(
+                codeOSSBucket) if codeOSSBucket else codeOSSBucket
+            codeOSSObject = str(
+                codeOSSObject) if codeOSSObject else codeOSSObject
             self._check_function_param_valid(
                 codeZipFile, codeDir, codeOSSBucket, codeOSSObject)
 
@@ -545,10 +579,11 @@ class Client(object):
                 payload['code'] = {'zipFile': encoded}
             else:
                 payload['code'] = {'ossBucketName': codeOSSBucket,
-                                'ossObjectName': codeOSSObject}
+                                   'ossObjectName': codeOSSObject}
         else:
             if not customContainerConfig:
-                raise Exception('customContainerConfig is required if runtime is custom-container')
+                raise Exception(
+                    'customContainerConfig is required if runtime is custom-container')
 
             payload['customContainerConfig'] = customContainerConfig
 
@@ -857,7 +892,8 @@ class Client(object):
                 errmsg = 'Function execution error: {0}. Path: {1}. Headers: {2}'.format(
                     r.json(), path, r.headers)
             except json.JSONDecodeError:
-                errmsg = 'Function execution error. Path: {0}. Headers: {1}'.format(path, r.headers)
+                errmsg = 'Function execution error. Path: {0}. Headers: {1}'.format(
+                    path, r.headers)
             logging.error(errmsg)
             raise self.__gen_request_err(r)
 
@@ -1776,7 +1812,7 @@ class Client(object):
         """
         if qualifier and (not serviceName):
             raise Exception(
-                    'serviceName is required when qualifier is not empty')
+                'serviceName is required when qualifier is not empty')
         method = 'GET'
         path = '/{0}/provision-configs'.format(self.api_version)
         headers = self._build_common_headers(method, path, headers)
@@ -1915,6 +1951,123 @@ class Client(object):
         headers = self._build_common_headers(method, path, headers)
 
         self._do_request(method, path, headers)
+
+    def list_instances(self, serviceName, qualifier, functionName, params={}, headers={}):
+        """
+        list instances
+        :param serviceName: name of the service.
+        :param qualifier: name of the service's alias.
+        :param functionName: name of the funtion.
+        :param params: 
+            limit: limit the number of instances returned
+            instanceIds: limit to return specified instances
+        :param headers, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, user define key value
+        """
+        method = 'GET'
+        path = '/{0}/services/{1}.{2}/functions/{3}/instances'.format(
+            self.api_version, serviceName, qualifier, functionName)
+
+        headers = self._build_common_headers(method, path, headers)
+
+        r = self._do_request(method, path, headers, params)
+        return FcHttpResponse(r.headers, r.json())
+
+    def instance_exec(self, serviceName, qualifier, functionName, instance_id, params={}, hooks={}, headers={}):
+        """
+        Execute the command within the instance
+        :param serviceName: name of the service.
+        :param qualifier: name of the service's alias.
+        :param functionName: name of the funtion.
+        :param instance_id: name of the instance 
+        :param params
+            command: initial command
+            stdin: enable stdin
+            stdout: enable stdout
+            stderr: enable stderr
+            tty: enable tty
+            idleTimeout: no operation disconnect time 
+        :param hooks
+            on_open: callback on opened
+            on_stdout: callback on got stdout
+            on_stderr: callback on got stderr
+            on_error: callback on got error
+            on_close: callback on closed
+        :param headers, optional
+            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
+            2, user define key value
+        """
+        url = '/{0}/services/{1}.{2}/functions/{3}/instances/{4}/exec'.format(
+            self.api_version,
+            serviceName, qualifier,
+            functionName, instance_id,
+        )
+
+        ws = self.websocket(url, params)
+        return ExecWebsocket(
+            ws,
+            on_open=hooks.get('on_open'),
+            on_stdout=hooks.get('on_stdout'),
+            on_stderr=hooks.get('on_stderr'),
+            on_error=hooks.get('on_error'),
+            on_close=hooks.get('on_close'),
+        )
+
+
+class ExecWebsocket(object):
+    def __init__(self, ws: websocket.WebSocketApp, on_open=None, on_stdout=None, on_stderr=None, on_error=None, on_close=None):
+        self.ws = ws
+        self.on_open = on_open
+        self.on_error = on_error
+        self.on_close = on_close
+        self.on_stdout = on_stdout
+        self.on_stderr = on_stderr
+
+        self.ws.on_open = self.__on_open
+        self.ws.on_message = self.__on_message
+        self.ws.on_error = self.__on_error
+        self.ws.on_close = self.__on_close
+
+    def __on_open(self, ws):
+        if self.on_open != None:
+            threading.Thread(target=self.on_open, args=(self,)).start()
+
+    def __on_message(self, ws, msg):
+        message_type = ord(msg[0])
+        message = msg[1:]
+        if message_type == 1:
+            if self.on_stdout != None:
+                self.on_stdout(self, message)
+        elif message_type == 2:
+            if self.on_stderr != None:
+                self.on_stderr(self, message)
+        elif message_type == 3:
+            error = "Server error: %s" % message
+            self.__on_error(ws, error)
+        else:
+            error = Exception('unknown message type: %s' % message_type)
+            if self.on_error != None:
+                self.on_error(self, error)
+
+    def __on_error(self, ws, error):
+        if self.on_error != None:
+            self.on_error(self, error)
+
+    def __on_close(self, ws, *arg):
+        if self.on_close != None:
+            self.on_close(self)
+
+    def send(self, data):
+        data = chr(0) + data
+        self.ws.send(data)
+
+    def start(self):
+        self.ws.run_forever()
+
+    def close(self):
+        self.ws.close()
+
 
 class FcHttpResponse(object):
     def __init__(self, headers, data):
