@@ -1,5 +1,5 @@
 FROM python:3.6
 
-RUN pip install nose requests
+RUN pip install nose requests websockets-client==0.59.0
 
 WORKDIR /code
