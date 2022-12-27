@@ -19,6 +19,8 @@ Running environment
 
 Python 2.7, Python 3.6
 
+> 其中 python2.7 支持到 2.5.0， 后续的版本不支持
+
 
 Notice
 -------------------
