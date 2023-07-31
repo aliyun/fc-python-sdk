@@ -65,7 +65,7 @@ class TestCustomDomain(unittest.TestCase):
         self.access_key_id = os.environ['ACCESS_KEY_ID']
         self.access_key_secret = os.environ['ACCESS_KEY_SECRET']
         self.endpoint = os.environ['ENDPOINT']
-        self.domain_name = 'pythonSDK.cn-hongkong.{0}.cname-test.fc.aliyun-inc.com'.format(os.environ['ACCOUNT_ID'])
+        self.domain_name = 'python-sdk.cn-hongkong.{0}.cname-test.functioncompute.com'.format(os.environ['ACCOUNT_ID'])
 
         self.client = fc2.Client(
             endpoint=self.endpoint,
