@@ -22,9 +22,9 @@ with open('README.rst', 'rb') as f:
     readme = f.read().decode('utf-8')
 
 setup(
-    name='aliyun-fc2',
+    name='xiliu-fc2',
     version=version,
-    description='Aliyun FunctionCompute SDK2',
+    description='xiliu Aliyun FunctionCompute SDK2',
     long_description=readme,
     packages=['fc2'],
     install_requires=['requests>=2.20.0',
@@ -38,7 +38,6 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.6+',
     ]
 )
