@@ -11,7 +11,7 @@ def zip_dir(inputDir, output):
     : param inputDir: the input directory that need be archived.
     : param output: the output file-like object to store the archived data.
     """
-    zipOut = zipfile.ZipFile(output, 'w', compression=zipfile.ZIP_DEFLATED)
+    zipOut = zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED)
 
     rootLen = len(inputDir)
 
@@ -20,15 +20,15 @@ def zip_dir(inputDir, output):
         # store empty directories
         if not contents:
             # http://www.velocityreviews.com/forums/t318840-add-empty-directory-using-zipfile.html
-            archiveRoot = parentDirectory[rootLen:].replace('\\', '/').lstrip('/')
-            zipInfo = zipfile.ZipInfo(archiveRoot + '/')
-            zipOut.writestr(zipInfo, '')
+            archiveRoot = parentDirectory[rootLen:].replace("\\", "/").lstrip("/")
+            zipInfo = zipfile.ZipInfo(archiveRoot + "/")
+            zipOut.writestr(zipInfo, "")
         for item in contents:
             fullPath = os.path.join(parentDirectory, item)
             if os.path.isdir(fullPath) and not os.path.islink(fullPath):
                 _archive_dir(fullPath)
             else:
-                archiveRoot = fullPath[rootLen:].replace('\\', '/').lstrip('/')
+                archiveRoot = fullPath[rootLen:].replace("\\", "/").lstrip("/")
                 if os.path.islink(fullPath):
                     # http://www.mail-archive.com/python-list@python.org/msg34223.html
                     zipInfo = zipfile.ZipInfo(archiveRoot)
@@ -38,7 +38,7 @@ def zip_dir(inputDir, output):
                     zipInfo.external_attr = 2716663808
                     zipOut.writestr(zipInfo, os.readlink(fullPath))
                 else:
-                    #print('faint {0} {1} {2}'.format(rootLen, fullPath, archiveRoot))
+                    # print('faint {0} {1} {2}'.format(rootLen, fullPath, archiveRoot))
                     zipOut.write(fullPath, archiveRoot, zipfile.ZIP_DEFLATED)
 
     _archive_dir(inputDir)

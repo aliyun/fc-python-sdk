@@ -30,7 +30,7 @@ elif _ver[0] == 3:
 retries = 5
 backoff_factor = 1
 status_forcelist = (500, 502, 504)
-delimiter = '.'
+delimiter = "."
 
 
 def makeQuery(queries):
@@ -40,8 +40,8 @@ def makeQuery(queries):
         if type(item) != list:
             item = [item]
         for value in item:
-            array.append(k + '=' + quote(str(value)))
-    return '&'.join(array)
+            array.append(k + "=" + quote(str(value)))
+    return "&".join(array)
 
 
 def requestWithTry(method, url, **kwargs):
@@ -54,112 +54,138 @@ def requestWithTry(method, url, **kwargs):
             status_forcelist=status_forcelist,
         )
         adapter = HTTPAdapter(max_retries=retry)
-        session.mount('http://', adapter)
-        session.mount('https://', adapter)
+        session.mount("http://", adapter)
+        session.mount("https://", adapter)
 
         return session.request(method=method, url=url, **kwargs)
 
 
 class Client(object):
     def __init__(self, **kwargs):
-        endpoint = kwargs.get('endpoint', None)
+        endpoint = kwargs.get("endpoint", None)
         if not endpoint:
             raise ValueError(
-                'A valid Endpoint parameter must be specified to construct the Client object.')
+                "A valid Endpoint parameter must be specified to construct the Client object."
+            )
         access_key_id = kwargs.get("accessKeyID", None)
         if not access_key_id:
             raise ValueError(
-                'A valid AccessKeyID parameter must be specified to construct the Client object.')
-        access_key_secret = kwargs.get('accessKeySecret', None)
+                "A valid AccessKeyID parameter must be specified to construct the Client object."
+            )
+        access_key_secret = kwargs.get("accessKeySecret", None)
         if not access_key_secret:
             raise ValueError(
-                'A valid AccessKeySecret parameter must be specified to construct the Client object.')
-        security_token = kwargs.get('securityToken', '')
+                "A valid AccessKeySecret parameter must be specified to construct the Client object."
+            )
+        security_token = kwargs.get("securityToken", "")
         self.endpoint = Client._normalize_endpoint(endpoint)
         self.host = Client._get_host(endpoint)
-        self.api_version = '2016-08-15'
-        self.user_agent = \
-            'aliyun-fc-sdk-v{0}.python-{1}.{2}-{3}-{4}'. \
-            format(__version__, platform.python_version(),
-                   platform.system(), platform.release(), platform.machine())
+        self.api_version = "2016-08-15"
+        self.user_agent = "aliyun-fc-sdk-v{0}.python-{1}.{2}-{3}-{4}".format(
+            __version__,
+            platform.python_version(),
+            platform.system(),
+            platform.release(),
+            platform.machine(),
+        )
         self.auth = auth.Auth(access_key_id, access_key_secret, security_token)
-        self.timeout = kwargs.get('Timeout', 60)
+        self.timeout = kwargs.get("Timeout", 60)
 
     @staticmethod
     def _normalize_endpoint(url):
-        if not url.startswith('http://') and not url.startswith('https://'):
-            return 'https://{0}'.format(url)
+        if not url.startswith("http://") and not url.startswith("https://"):
+            return "https://{0}".format(url)
         return url.strip()
 
     @staticmethod
     def _get_host(endpoint):
-        """ Extract host from endpoint. """
-        if endpoint.startswith('http://'):
+        """Extract host from endpoint."""
+        if endpoint.startswith("http://"):
             return endpoint[7:].strip()
 
-        if endpoint.startswith('https://'):
+        if endpoint.startswith("https://"):
             return endpoint[8:].strip()
 
         return endpoint.strip()
 
-    def _build_common_headers(self, method, path, customHeaders={}, unescaped_queries=None):
+    def _build_common_headers(
+        self, method, path, customHeaders={}, unescaped_queries=None
+    ):
         headers = {
-            'host': self.host,
-            'date': email.utils.formatdate(usegmt=True),
-            'content-type': 'application/json',
-            'content-length': '0',
-            'user-agent': self.user_agent,
+            "host": self.host,
+            "date": email.utils.formatdate(usegmt=True),
+            "content-type": "application/json",
+            "content-length": "0",
+            "user-agent": self.user_agent,
         }
-        if self.auth.security_token != '':
-            headers['x-fc-security-token'] = self.auth.security_token
+        if self.auth.security_token != "":
+            headers["x-fc-security-token"] = self.auth.security_token
 
         if customHeaders:
             headers.update(customHeaders)
 
         # Sign the request and set the signature to headers.
-        headers['authorization'] = self.auth.sign_request(
-            method, path, headers, unescaped_queries)
+        headers["authorization"] = self.auth.sign_request(
+            method, path, headers, unescaped_queries
+        )
 
         return headers
 
-    def do_http_request(self, method, serviceName, functionName, path, headers={}, params=None, body=None):
+    def do_http_request(
+        self,
+        method,
+        serviceName,
+        functionName,
+        path,
+        headers={},
+        params=None,
+        body=None,
+    ):
         params = {} if params is None else params
         if not isinstance(params, dict):
-            raise TypeError('`None` or `dict` required for params')
-        path = '/{0}/proxy/{1}/{2}{3}'.format(
-            self.api_version, serviceName, functionName, path if path != "" else "/")
-        url = '{0}{1}'.format(self.endpoint, path)
-        headers = self._build_common_headers(
-            method, unescape(path), headers, params)
+            raise TypeError("`None` or `dict` required for params")
+        path = "/{0}/proxy/{1}/{2}{3}".format(
+            self.api_version, serviceName, functionName, path if path != "" else "/"
+        )
+        url = "{0}{1}".format(self.endpoint, path)
+        headers = self._build_common_headers(method, unescape(path), headers, params)
         logging.debug(
-            'Do http request. Method: {0}. URL: {1}. Params: {2}. Headers: {3}'.format(method, url, params, headers))
-        r = requestWithTry(method, url, headers=headers,
-                           params=params, data=body, timeout=self.timeout)
+            "Do http request. Method: {0}. URL: {1}. Params: {2}. Headers: {3}".format(
+                method, url, params, headers
+            )
+        )
+        r = requestWithTry(
+            method, url, headers=headers, params=params, data=body, timeout=self.timeout
+        )
         return r
 
     def _do_request(self, method, path, headers, params=None, body=None):
-        url = '{0}{1}'.format(self.endpoint, path)
-        logging.debug('Perform http request. Method: {0}. URL: {1}. Headers: {2}'.format(
-            method, url, headers))
-        r = requestWithTry(method, url, headers=headers,
-                           params=params, data=body, timeout=self.timeout)
+        url = "{0}{1}".format(self.endpoint, path)
+        logging.debug(
+            "Perform http request. Method: {0}. URL: {1}. Headers: {2}".format(
+                method, url, headers
+            )
+        )
+        r = requestWithTry(
+            method, url, headers=headers, params=params, data=body, timeout=self.timeout
+        )
 
         if r.status_code < 400:
             logging.debug(
-                'Http status code: {0}. Method: {1}. URL: {2}. Headers: {3}'.format(
-                    r.status_code, method, url, r.headers))
+                "Http status code: {0}. Method: {1}. URL: {2}. Headers: {3}".format(
+                    r.status_code, method, url, r.headers
+                )
+            )
         elif 400 <= r.status_code < 500:
-            errmsg = \
-                'Client error: {0}. Message: {1}. Method: {2}. URL: {3}. Request headers: {4}. Response headers: {5}'. \
-                format(r.status_code, r.json(),
-                       method, url, headers, r.headers)
+            errmsg = "Client error: {0}. Message: {1}. Method: {2}. URL: {3}. Request headers: {4}. Response headers: {5}".format(
+                r.status_code, r.json(), method, url, headers, r.headers
+            )
             logging.error(errmsg)
             raise self.__gen_request_err(r)
         elif 500 <= r.status_code < 600:
-            errmsg = \
-                'Server error: {0}. Message: {1}. Method: {2}. URL: {3}. Request headers: {4}. Response headers: {5}'. \
-                format(r.status_code, r.json(),
-                       method, url, headers, r.headers)
+            errmsg = "Server error: {0}. Message: {1}. Method: {2}. URL: {3}. Request headers: {4}. Response headers: {5}".format(
+                r.status_code, r.json(), method, url, headers, r.headers
+            )
             logging.error(errmsg)
             raise self.__gen_request_err(r)
 
@@ -170,29 +196,30 @@ class Client(object):
             err_d = r.json()
         except json.JSONDecodeError:
             err_d = {
-                'ErrorMessage': r.text,
-                'ErrorType': r.headers.get('x-fc-error-type', ''),
-                'RequestId': r.headers.get('X-Fc-Request-Id', 'unknown'),
-                'ErrorCode': r.headers.get('ErrorCode', '')
+                "ErrorMessage": r.text,
+                "ErrorType": r.headers.get("x-fc-error-type", ""),
+                "RequestId": r.headers.get("X-Fc-Request-Id", "unknown"),
+                "ErrorCode": r.headers.get("ErrorCode", ""),
             }
-            err_code = err_d.get('ErrorCode', '')
+            err_code = err_d.get("ErrorCode", "")
             err_msg = json.dumps(err_d)
-            return fc_exceptions.get_fc_error(err_msg, r.status_code, err_code, err_d['RequestId'])
+            return fc_exceptions.get_fc_error(
+                err_msg, r.status_code, err_code, err_d["RequestId"]
+            )
 
-        err_d['RequestId'] = r.headers.get('X-Fc-Request-Id', 'unknown')
-        err_code = err_d.get('ErrorCode', '')
+        err_d["RequestId"] = r.headers.get("X-Fc-Request-Id", "unknown")
+        err_code = err_d.get("ErrorCode", "")
         err_msg = json.dumps(err_d)
-        return fc_exceptions.get_fc_error(err_msg, r.status_code, err_code, err_d['RequestId'])
+        return fc_exceptions.get_fc_error(
+            err_msg, r.status_code, err_code, err_d["RequestId"]
+        )
 
     def websocket(self, url, queries={}, headers={}):
-        header = self._build_common_headers(
-            "GET", url, headers
-        )
+        header = self._build_common_headers("GET", url, headers)
         del header["host"]
 
-        url = '{0}{1}?{2}'.format(
-            self.endpoint.replace("http", "ws"),
-            url, makeQuery(queries)
+        url = "{0}{1}?{2}".format(
+            self.endpoint.replace("http", "ws"), url, makeQuery(queries)
         )
 
         ws = websocket.WebSocketApp(
@@ -202,7 +229,7 @@ class Client(object):
 
         return ws
 
-    def get_account_settings(self,  headers={}):
+    def get_account_settings(self, headers={}):
         """
         :return FcHttpResponse
         headers: dict
@@ -211,8 +238,8 @@ class Client(object):
             'availableAZs': ['zone-id']
         }
         """
-        method = 'GET'
-        path = '/{0}/account-settings'.format(self.api_version)
+        method = "GET"
+        path = "/{0}/account-settings".format(self.api_version)
         headers = self._build_common_headers(method, path, headers)
         r = self._do_request(method, path, headers)
         return FcHttpResponse(r.headers, r.json())
@@ -239,11 +266,12 @@ class Client(object):
             'serviceName': 'string',
         }
         """
-        method = 'POST'
-        path = '/{0}/services'.format(self.api_version)
+        method = "POST"
+        path = "/{0}/services".format(self.api_version)
         headers = self._build_common_headers(method, path, headers)
-        r = self._do_request(method, path, headers,
-                             body=json.dumps(payload).encode('utf-8'))
+        r = self._do_request(
+            method, path, headers, body=json.dumps(payload).encode("utf-8")
+        )
         # 'etag' now in headers
         return FcHttpResponse(r.headers, r.json())
 
@@ -257,8 +285,8 @@ class Client(object):
             3, user define key value
         :return: None
         """
-        method = 'DELETE'
-        path = '/{0}/services/{1}'.format(self.api_version, serviceName)
+        method = "DELETE"
+        path = "/{0}/services/{1}".format(self.api_version, serviceName)
         headers = self._build_common_headers(method, path, headers)
 
         self._do_request(method, path, headers)
@@ -286,12 +314,13 @@ class Client(object):
             'serviceName': 'string',
         }
         """
-        method = 'PUT'
-        path = '/{0}/services/{1}'.format(self.api_version, serviceName)
+        method = "PUT"
+        path = "/{0}/services/{1}".format(self.api_version, serviceName)
         headers = self._build_common_headers(method, path, headers)
 
-        r = self._do_request(method, path, headers,
-                             body=json.dumps(payload).encode('utf-8'))
+        r = self._do_request(
+            method, path, headers, body=json.dumps(payload).encode("utf-8")
+        )
         # 'etag' now in headers
         return FcHttpResponse(r.headers, r.json())
 
@@ -307,16 +336,24 @@ class Client(object):
         headers: dict {'etag':'string', ...}
         data: dict service configuration.
         """
-        method = 'GET'
+        method = "GET"
         if qualifier:
-            serviceName += '{0}{1}'.format(delimiter, qualifier)
-        path = '/{0}/services/{1}'.format(self.api_version, serviceName)
+            serviceName += "{0}{1}".format(delimiter, qualifier)
+        path = "/{0}/services/{1}".format(self.api_version, serviceName)
         headers = self._build_common_headers(method, path, headers)
 
         r = self._do_request(method, path, headers)
         return FcHttpResponse(r.headers, r.json())
 
-    def list_services(self, limit=None, nextToken=None, prefix=None, startKey=None, headers={}, tags=None):
+    def list_services(
+        self,
+        limit=None,
+        nextToken=None,
+        prefix=None,
+        startKey=None,
+        headers={},
+        tags=None,
+    ):
         """
         List the services in the current account.
         :param limit: (optional, integer) the total number of the returned services.
@@ -351,12 +388,16 @@ class Client(object):
             'nextToken': 'string'
         }
         """
-        method = 'GET'
-        path = '/{0}/services'.format(self.api_version)
+        method = "GET"
+        path = "/{0}/services".format(self.api_version)
         headers = self._build_common_headers(method, path, headers)
 
-        paramlst = [('limit', limit), ('prefix', prefix),
-                    ('nextToken', nextToken), ('startKey', startKey)]
+        paramlst = [
+            ("limit", limit),
+            ("prefix", prefix),
+            ("nextToken", nextToken),
+            ("startKey", startKey),
+        ]
         params = dict((k, v) for k, v in paramlst if v)
 
         if tags:
@@ -393,12 +434,12 @@ class Client(object):
             'initializationTimeout': 30   // in second
         }
         """
-        method = 'POST'
-        path = '/{0}/services/{1}/functions'.format(
-            self.api_version, serviceName)
+        method = "POST"
+        path = "/{0}/services/{1}/functions".format(self.api_version, serviceName)
         headers = self._build_common_headers(method, path, headers)
-        r = self._do_request(method, path, headers,
-                             body=json.dumps(payload).encode('utf-8'))
+        r = self._do_request(
+            method, path, headers, body=json.dumps(payload).encode("utf-8")
+        )
         # 'etag' now in headers
         return FcHttpResponse(r.headers, r.json())
 
@@ -431,12 +472,14 @@ class Client(object):
             'initializationTimeout': 30,  // in second
         }
         """
-        method = 'PUT'
-        path = '/{0}/services/{1}/functions/{2}'.format(
-            self.api_version, serviceName, functionName)
+        method = "PUT"
+        path = "/{0}/services/{1}/functions/{2}".format(
+            self.api_version, serviceName, functionName
+        )
         headers = self._build_common_headers(method, path, headers)
-        r = self._do_request(method, path, headers,
-                             body=json.dumps(payload).encode('utf-8'))
+        r = self._do_request(
+            method, path, headers, body=json.dumps(payload).encode("utf-8")
+        )
         # 'etag' now in headers
         return FcHttpResponse(r.headers, r.json())
 
@@ -451,9 +494,10 @@ class Client(object):
             3, user define key value
         :return: None
         """
-        method = 'DELETE'
-        path = '/{0}/services/{1}/functions/{2}'.format(
-            self.api_version, serviceName, functionName)
+        method = "DELETE"
+        path = "/{0}/services/{1}/functions/{2}".format(
+            self.api_version, serviceName, functionName
+        )
         headers = self._build_common_headers(method, path, headers)
 
         self._do_request(method, path, headers)
@@ -471,11 +515,12 @@ class Client(object):
         headers: dict {'etag':'string', ...}
         data: dict function configuration.
         """
-        method = 'GET'
+        method = "GET"
         if qualifier:
-            serviceName += '{0}{1}'.format(delimiter, qualifier)
-        path = '/{0}/services/{1}/functions/{2}'.format(
-            self.api_version, serviceName, functionName)
+            serviceName += "{0}{1}".format(delimiter, qualifier)
+        path = "/{0}/services/{1}/functions/{2}".format(
+            self.api_version, serviceName, functionName
+        )
         headers = self._build_common_headers(method, path, headers)
 
         r = self._do_request(method, path, headers)
@@ -499,17 +544,27 @@ class Client(object):
             'url': 'string',       // a download url of the code package
         }
         """
-        method = 'GET'
+        method = "GET"
         if qualifier:
-            serviceName += '{0}{1}'.format(delimiter, qualifier)
-        path = '/{0}/services/{1}/functions/{2}/code'.format(
-            self.api_version, serviceName, functionName)
+            serviceName += "{0}{1}".format(delimiter, qualifier)
+        path = "/{0}/services/{1}/functions/{2}/code".format(
+            self.api_version, serviceName, functionName
+        )
         headers = self._build_common_headers(method, path, headers)
 
         r = self._do_request(method, path, headers)
         return FcHttpResponse(r.headers, r.json())
 
-    def list_functions(self, serviceName, limit=None, nextToken=None, prefix=None, startKey=None, qualifier=None, headers={}):
+    def list_functions(
+        self,
+        serviceName,
+        limit=None,
+        nextToken=None,
+        prefix=None,
+        startKey=None,
+        qualifier=None,
+        headers={},
+    ):
         """
         List the functions of the specified service.
         :param limit: (optional, integer) the total number of the returned services.
@@ -546,21 +601,26 @@ class Client(object):
             'nextToken': 'string'
         }
         """
-        method = 'GET'
+        method = "GET"
         if qualifier:
-            serviceName += '{0}{1}'.format(delimiter, qualifier)
-        path = '/{0}/services/{1}/functions'.format(
-            self.api_version, serviceName)
+            serviceName += "{0}{1}".format(delimiter, qualifier)
+        path = "/{0}/services/{1}/functions".format(self.api_version, serviceName)
         headers = self._build_common_headers(method, path, headers)
 
-        paramlst = [('limit', limit), ('prefix', prefix),
-                    ('nextToken', nextToken), ('startKey', startKey)]
+        paramlst = [
+            ("limit", limit),
+            ("prefix", prefix),
+            ("nextToken", nextToken),
+            ("startKey", startKey),
+        ]
         params = dict((k, v) for k, v in paramlst if v)
 
         r = self._do_request(method, path, headers, params=params)
         return FcHttpResponse(r.headers, r.json())
 
-    def invoke_function(self, serviceName, functionName, payload=None, qualifier=None, headers={}):
+    def invoke_function(
+        self, serviceName, functionName, payload=None, qualifier=None, headers={}
+    ):
         """
         Invoke the function synchronously or asynchronously., default is synchronously.
         :param serviceName: (required, string) the name of the service.
@@ -576,22 +636,27 @@ class Client(object):
                             # other can add user define header
         :return: function output FcHttpResponse object.
         """
-        method = 'POST'
+        method = "POST"
         if qualifier:
-            serviceName += '{0}{1}'.format(delimiter, qualifier)
-        path = '/{0}/services/{1}/functions/{2}/invocations'.format(
-            self.api_version, serviceName, functionName)
+            serviceName += "{0}{1}".format(delimiter, qualifier)
+        path = "/{0}/services/{1}/functions/{2}/invocations".format(
+            self.api_version, serviceName, functionName
+        )
         headers = self._build_common_headers(method, path, headers)
 
         r = self._do_request(method, path, headers, body=payload)
-        if r.headers.get('x-fc-error-type', ''):
+        if r.headers.get("x-fc-error-type", ""):
             # For custom runtime Error exception
             try:
-                errmsg = 'Function execution error: {0}. Path: {1}. Headers: {2}'.format(
-                    r.json(), path, r.headers)
+                errmsg = (
+                    "Function execution error: {0}. Path: {1}. Headers: {2}".format(
+                        r.json(), path, r.headers
+                    )
+                )
             except json.JSONDecodeError:
-                errmsg = 'Function execution error. Path: {0}. Headers: {1}'.format(
-                    path, r.headers)
+                errmsg = "Function execution error. Path: {0}. Headers: {1}".format(
+                    path, r.headers
+                )
             logging.error(errmsg)
             raise self.__gen_request_err(r)
 
@@ -619,12 +684,14 @@ class Client(object):
             'triggerType': 'string',
         }
         """
-        method = 'POST'
-        path = '/{0}/services/{1}/functions/{2}/triggers'.format(
-            self.api_version, serviceName, functionName)
+        method = "POST"
+        path = "/{0}/services/{1}/functions/{2}/triggers".format(
+            self.api_version, serviceName, functionName
+        )
         headers = self._build_common_headers(method, path, headers)
-        r = self._do_request(method, path, headers,
-                             body=json.dumps(payload).encode('utf-8'))
+        r = self._do_request(
+            method, path, headers, body=json.dumps(payload).encode("utf-8")
+        )
         return FcHttpResponse(r.headers, r.json())
 
     def delete_trigger(self, serviceName, functionName, triggerName, headers={}):
@@ -639,13 +706,16 @@ class Client(object):
             3, user define key value
         :return: None
         """
-        method = 'DELETE'
-        path = '/{0}/services/{1}/functions/{2}/triggers/{3}'.format(self.api_version, serviceName, functionName,
-                                                                     triggerName)
+        method = "DELETE"
+        path = "/{0}/services/{1}/functions/{2}/triggers/{3}".format(
+            self.api_version, serviceName, functionName, triggerName
+        )
         headers = self._build_common_headers(method, path, headers)
         self._do_request(method, path, headers)
 
-    def update_trigger(self, serviceName, functionName, triggerName, payload, headers={}):
+    def update_trigger(
+        self, serviceName, functionName, triggerName, payload, headers={}
+    ):
         """
         Update a trigger.
         :param serviceName: (required, string), name of the service that the trigger belongs to.
@@ -670,12 +740,14 @@ class Client(object):
             'triggerType': 'string',
         }
         """
-        method = 'PUT'
-        path = '/{0}/services/{1}/functions/{2}/triggers/{3}'.format(self.api_version, serviceName, functionName,
-                                                                     triggerName)
+        method = "PUT"
+        path = "/{0}/services/{1}/functions/{2}/triggers/{3}".format(
+            self.api_version, serviceName, functionName, triggerName
+        )
         headers = self._build_common_headers(method, path, headers)
-        r = self._do_request(method, path, headers,
-                             body=json.dumps(payload).encode('utf-8'))
+        r = self._do_request(
+            method, path, headers, body=json.dumps(payload).encode("utf-8")
+        )
         return FcHttpResponse(r.headers, r.json())
 
     def get_trigger(self, serviceName, functionName, triggerName, headers={}):
@@ -700,15 +772,24 @@ class Client(object):
             'triggerType': 'string',
         }
         """
-        method = 'GET'
-        path = '/{0}/services/{1}/functions/{2}/triggers/{3}'.format(self.api_version, serviceName, functionName,
-                                                                     triggerName)
+        method = "GET"
+        path = "/{0}/services/{1}/functions/{2}/triggers/{3}".format(
+            self.api_version, serviceName, functionName, triggerName
+        )
         headers = self._build_common_headers(method, path, headers)
         r = self._do_request(method, path, headers)
         return FcHttpResponse(r.headers, r.json())
 
-    def list_triggers(self, serviceName, functionName, limit=None, nextToken=None, prefix=None, startKey=None,
-                      headers={}):
+    def list_triggers(
+        self,
+        serviceName,
+        functionName,
+        limit=None,
+        nextToken=None,
+        prefix=None,
+        startKey=None,
+        headers={},
+    ):
         """
         List the triggers of the specified function.
         :param limit: (optional, integer) the total number of the returned triggerss.
@@ -738,17 +819,24 @@ class Client(object):
             'nextToken': 'string'
         }
         """
-        method = 'GET'
-        path = '/{0}/services/{1}/functions/{2}/triggers'.format(
-            self.api_version, serviceName, functionName)
+        method = "GET"
+        path = "/{0}/services/{1}/functions/{2}/triggers".format(
+            self.api_version, serviceName, functionName
+        )
         headers = self._build_common_headers(method, path, headers)
-        paramlst = [('limit', limit), ('prefix', prefix),
-                    ('nextToken', nextToken), ('startKey', startKey)]
+        paramlst = [
+            ("limit", limit),
+            ("prefix", prefix),
+            ("nextToken", nextToken),
+            ("startKey", startKey),
+        ]
         params = dict((k, v) for k, v in paramlst if v)
         r = self._do_request(method, path, headers, params=params)
         return FcHttpResponse(r.headers, r.json())
 
-    def create_custom_domain(self, domainName, protocol=None, routeConfig=None, headers={}, certConfig=None):
+    def create_custom_domain(
+        self, domainName, protocol=None, routeConfig=None, headers={}, certConfig=None
+    ):
         """
         ref: https://help.aliyun.com/document_detail/52877.html?spm=a2c4g.11186623.6.696.1e6d2d2dz4duTM#createCustomDomain
         Create a custom domain.
@@ -779,20 +867,21 @@ class Client(object):
             'domainName': 'string',
         }
         """
-        method = 'POST'
-        path = '/{0}/custom-domains'.format(self.api_version)
+        method = "POST"
+        path = "/{0}/custom-domains".format(self.api_version)
         headers = self._build_common_headers(method, path, headers)
 
-        payload = {'domainName': domainName}
+        payload = {"domainName": domainName}
         if protocol:
-            payload['protocol'] = protocol
+            payload["protocol"] = protocol
         if routeConfig:
-            payload['routeConfig'] = routeConfig
+            payload["routeConfig"] = routeConfig
         if certConfig:
-            payload['certConfig'] = certConfig
+            payload["certConfig"] = certConfig
 
-        r = self._do_request(method, path, headers,
-                             body=json.dumps(payload).encode('utf-8'))
+        r = self._do_request(
+            method, path, headers, body=json.dumps(payload).encode("utf-8")
+        )
         # 'etag' now in headers
         return FcHttpResponse(r.headers, r.json())
 
@@ -805,13 +894,15 @@ class Client(object):
             3, user define key value
         :return: None
         """
-        method = 'DELETE'
-        path = '/{0}/custom-domains/{1}'.format(self.api_version, domainName)
+        method = "DELETE"
+        path = "/{0}/custom-domains/{1}".format(self.api_version, domainName)
         headers = self._build_common_headers(method, path, headers)
 
         self._do_request(method, path, headers)
 
-    def update_custom_domain(self, domainName, protocol=None, routeConfig=None, headers={}, certConfig=None):
+    def update_custom_domain(
+        self, domainName, protocol=None, routeConfig=None, headers={}, certConfig=None
+    ):
         """
         Update the custom domain attributes.
         :param domainName: name of the custom domain.
@@ -840,20 +931,21 @@ class Client(object):
             'domainName': 'string',
         }
         """
-        method = 'PUT'
-        path = '/{0}/custom-domains/{1}'.format(self.api_version, domainName)
+        method = "PUT"
+        path = "/{0}/custom-domains/{1}".format(self.api_version, domainName)
         headers = self._build_common_headers(method, path, headers)
 
         payload = {}
         if protocol:
-            payload['protocol'] = protocol
+            payload["protocol"] = protocol
         if routeConfig:
-            payload['routeConfig'] = routeConfig
+            payload["routeConfig"] = routeConfig
         if certConfig:
-            payload['certConfig'] = certConfig
+            payload["certConfig"] = certConfig
 
-        r = self._do_request(method, path, headers,
-                             body=json.dumps(payload).encode('utf-8'))
+        r = self._do_request(
+            method, path, headers, body=json.dumps(payload).encode("utf-8")
+        )
         # 'etag' now in headers
         return FcHttpResponse(r.headers, r.json())
 
@@ -868,14 +960,16 @@ class Client(object):
         headers: dict {'etag':'string', ...}
         data: dict custom domain configuration.
         """
-        method = 'GET'
-        path = '/{0}/custom-domains/{1}'.format(self.api_version, domainName)
+        method = "GET"
+        path = "/{0}/custom-domains/{1}".format(self.api_version, domainName)
         headers = self._build_common_headers(method, path, headers)
 
         r = self._do_request(method, path, headers)
         return FcHttpResponse(r.headers, r.json())
 
-    def list_custom_domains(self, limit=None, nextToken=None, prefix=None, startKey=None, headers={}):
+    def list_custom_domains(
+        self, limit=None, nextToken=None, prefix=None, startKey=None, headers={}
+    ):
         """
         List the custom domains in the current account.
         :param limit: (optional, integer) the total number of the returned services.
@@ -905,12 +999,16 @@ class Client(object):
             'nextToken': 'string'
         }
         """
-        method = 'GET'
-        path = '/{0}/custom-domains'.format(self.api_version)
+        method = "GET"
+        path = "/{0}/custom-domains".format(self.api_version)
         headers = self._build_common_headers(method, path, headers)
 
-        paramlst = [('limit', limit), ('prefix', prefix),
-                    ('nextToken', nextToken), ('startKey', startKey)]
+        paramlst = [
+            ("limit", limit),
+            ("prefix", prefix),
+            ("nextToken", nextToken),
+            ("startKey", startKey),
+        ]
         params = dict((k, v) for k, v in paramlst if v)
 
         r = self._do_request(method, path, headers, params=params)
@@ -936,20 +1034,28 @@ class Client(object):
             'lastModifiedTime ': 'string',
         }
         """
-        method = 'POST'
-        path = '/{0}/services/{1}/versions'.format(
-            self.api_version, serviceName)
+        method = "POST"
+        path = "/{0}/services/{1}/versions".format(self.api_version, serviceName)
         headers = self._build_common_headers(method, path, headers)
 
         payload = {}
         if description:
-            payload['description'] = description
+            payload["description"] = description
 
-        r = self._do_request(method, path, headers,
-                             body=json.dumps(payload).encode('utf-8'))
+        r = self._do_request(
+            method, path, headers, body=json.dumps(payload).encode("utf-8")
+        )
         return FcHttpResponse(r.headers, r.json())
 
-    def list_versions(self, serviceName, limit=None, nextToken=None, startKey=None, direction=None, headers={}):
+    def list_versions(
+        self,
+        serviceName,
+        limit=None,
+        nextToken=None,
+        startKey=None,
+        direction=None,
+        headers={},
+    ):
         """
         List the versions of the current service.
         :param serviceName: (required, string), name of the service.
@@ -977,13 +1083,16 @@ class Client(object):
             'nextToken': 'string'
         }
         """
-        method = 'GET'
-        path = '/{0}/services/{1}/versions'.format(
-            self.api_version, serviceName)
+        method = "GET"
+        path = "/{0}/services/{1}/versions".format(self.api_version, serviceName)
         headers = self._build_common_headers(method, path, headers)
 
-        paramlst = [('limit', limit), ('nextToken', nextToken),
-                    ('startKey', startKey), ('direction', direction)]
+        paramlst = [
+            ("limit", limit),
+            ("nextToken", nextToken),
+            ("startKey", startKey),
+            ("direction", direction),
+        ]
         params = dict((k, v) for k, v in paramlst if v)
 
         r = self._do_request(method, path, headers, params=params)
@@ -999,14 +1108,23 @@ class Client(object):
             2, user define key value
         :return: None
         """
-        method = 'DELETE'
-        path = '/{0}/services/{1}/versions/{2}'.format(
-            self.api_version, serviceName, versionId)
+        method = "DELETE"
+        path = "/{0}/services/{1}/versions/{2}".format(
+            self.api_version, serviceName, versionId
+        )
         headers = self._build_common_headers(method, path, headers)
 
         self._do_request(method, path, headers)
 
-    def create_alias(self, serviceName, aliasName, versionId, description=None, additionalVersionWeight=None, headers={}):
+    def create_alias(
+        self,
+        serviceName,
+        aliasName,
+        versionId,
+        description=None,
+        additionalVersionWeight=None,
+        headers={},
+    ):
         """
         Create an alias.
         :param serviceName: (required, string), name of the service.
@@ -1032,18 +1150,18 @@ class Client(object):
             'lastModifiedTime': 'string',
         }
         """
-        method = 'POST'
-        path = '/{0}/services/{1}/aliases'.format(
-            self.api_version, serviceName)
+        method = "POST"
+        path = "/{0}/services/{1}/aliases".format(self.api_version, serviceName)
         headers = self._build_common_headers(method, path, headers)
 
-        payload = {'aliasName': aliasName, 'versionId': versionId}
+        payload = {"aliasName": aliasName, "versionId": versionId}
         if description:
-            payload['description'] = description
+            payload["description"] = description
         if additionalVersionWeight != None:
-            payload['additionalVersionWeight'] = additionalVersionWeight
-        r = self._do_request(method, path, headers,
-                             body=json.dumps(payload).encode('utf-8'))
+            payload["additionalVersionWeight"] = additionalVersionWeight
+        r = self._do_request(
+            method, path, headers, body=json.dumps(payload).encode("utf-8")
+        )
 
         return FcHttpResponse(r.headers, r.json())
 
@@ -1067,15 +1185,24 @@ class Client(object):
             'lastModifiedTime': 'string',
         }
         """
-        method = 'GET'
-        path = '/{0}/services/{1}/aliases/{2}'.format(
-            self.api_version, serviceName, aliasName)
+        method = "GET"
+        path = "/{0}/services/{1}/aliases/{2}".format(
+            self.api_version, serviceName, aliasName
+        )
         headers = self._build_common_headers(method, path, headers)
 
         r = self._do_request(method, path, headers)
         return FcHttpResponse(r.headers, r.json())
 
-    def update_alias(self, serviceName, aliasName, versionId, description=None, additionalVersionWeight=None, headers={}):
+    def update_alias(
+        self,
+        serviceName,
+        aliasName,
+        versionId,
+        description=None,
+        additionalVersionWeight=None,
+        headers={},
+    ):
         """
         Update an alias.
         :param serviceName: (required, string), name of the service.
@@ -1102,24 +1229,34 @@ class Client(object):
             'lastModifiedTime': 'string',
         }
         """
-        method = 'PUT'
-        path = '/{0}/services/{1}/aliases/{2}'.format(
-            self.api_version, serviceName, aliasName)
+        method = "PUT"
+        path = "/{0}/services/{1}/aliases/{2}".format(
+            self.api_version, serviceName, aliasName
+        )
         headers = self._build_common_headers(method, path, headers)
 
         payload = {}
         if versionId:
-            payload['versionId'] = versionId
+            payload["versionId"] = versionId
         if description:
-            payload['description'] = description
+            payload["description"] = description
         if additionalVersionWeight != None:
-            payload['additionalVersionWeight'] = additionalVersionWeight
+            payload["additionalVersionWeight"] = additionalVersionWeight
 
-        r = self._do_request(method, path, headers,
-                             body=json.dumps(payload).encode('utf-8'))
+        r = self._do_request(
+            method, path, headers, body=json.dumps(payload).encode("utf-8")
+        )
         return FcHttpResponse(r.headers, r.json())
 
-    def list_aliases(self, serviceName, limit=None, nextToken=None, prefix=None, startKey=None, headers={}):
+    def list_aliases(
+        self,
+        serviceName,
+        limit=None,
+        nextToken=None,
+        prefix=None,
+        startKey=None,
+        headers={},
+    ):
         """
         List the aliases in the current service.
         :param serviceName: (required, string), name of the service.
@@ -1149,13 +1286,16 @@ class Client(object):
             'nextToken': 'string'
         }
         """
-        method = 'GET'
-        path = '/{0}/services/{1}/aliases'.format(
-            self.api_version, serviceName)
+        method = "GET"
+        path = "/{0}/services/{1}/aliases".format(self.api_version, serviceName)
         headers = self._build_common_headers(method, path, headers)
 
-        paramlst = [('limit', limit), ('prefix', prefix),
-                    ('nextToken', nextToken), ('startKey', startKey)]
+        paramlst = [
+            ("limit", limit),
+            ("prefix", prefix),
+            ("nextToken", nextToken),
+            ("startKey", startKey),
+        ]
         params = dict((k, v) for k, v in paramlst if v)
 
         r = self._do_request(method, path, headers, params=params)
@@ -1172,9 +1312,10 @@ class Client(object):
             3, user define key value
         :return: None
         """
-        method = 'DELETE'
-        path = '/{0}/services/{1}/aliases/{2}'.format(
-            self.api_version, serviceName, aliasName)
+        method = "DELETE"
+        path = "/{0}/services/{1}/aliases/{2}".format(
+            self.api_version, serviceName, aliasName
+        )
         headers = self._build_common_headers(method, path, headers)
 
         self._do_request(method, path, headers)
@@ -1194,15 +1335,13 @@ class Client(object):
             'requestId': 'string'
         }
         """
-        method = 'POST'
-        path = '/{0}/tag'.format(self.api_version)
+        method = "POST"
+        path = "/{0}/tag".format(self.api_version)
         headers = self._build_common_headers(method, path, headers)
-        payload = {
-            'resourceArn': resourceArn,
-            'tags': tags
-        }
-        r = self._do_request(method, path, headers,
-                             body=json.dumps(payload).encode('utf-8'))
+        payload = {"resourceArn": resourceArn, "tags": tags}
+        r = self._do_request(
+            method, path, headers, body=json.dumps(payload).encode("utf-8")
+        )
         return FcHttpResponse(r.headers, r.json())
 
     def untag_resource(self, resourceArn, tagKeys, deleteAll=False, headers={}):
@@ -1221,19 +1360,16 @@ class Client(object):
             'requestId': 'string'
         }
         """
-        method = 'DELETE'
-        path = '/{0}/tag'.format(self.api_version)
+        method = "DELETE"
+        path = "/{0}/tag".format(self.api_version)
         headers = self._build_common_headers(method, path, headers)
-        payload = {
-            'resourceArn': resourceArn,
-            'tagKeys': tagKeys,
-            'all': deleteAll
-        }
-        r = self._do_request(method, path, headers,
-                             body=json.dumps(payload).encode('utf-8'))
+        payload = {"resourceArn": resourceArn, "tagKeys": tagKeys, "all": deleteAll}
+        r = self._do_request(
+            method, path, headers, body=json.dumps(payload).encode("utf-8")
+        )
         return FcHttpResponse(r.headers, r.json())
 
-    def get_resource_tags(self, resourceArn,  headers={}):
+    def get_resource_tags(self, resourceArn, headers={}):
         """
         get a resource's tags, Currently only services are supported
         :param resourceArn: (required string), Resource ARN. Either full ARN or partial ARN
@@ -1252,8 +1388,8 @@ class Client(object):
             }
         }
         """
-        method = 'GET'
-        path = '/{0}/tag'.format(self.api_version)
+        method = "GET"
+        path = "/{0}/tag".format(self.api_version)
         headers = self._build_common_headers(method, path, headers)
 
         params = {"resourceArn": resourceArn}
@@ -1287,17 +1423,19 @@ class Client(object):
             'nextToken': 'string'
         }
         """
-        method = 'GET'
-        path = '/{0}/reservedCapacities'.format(self.api_version)
+        method = "GET"
+        path = "/{0}/reservedCapacities".format(self.api_version)
         headers = self._build_common_headers(method, path, headers)
 
-        paramlst = [('limit', limit), ('nextToken', nextToken)]
+        paramlst = [("limit", limit), ("nextToken", nextToken)]
         params = dict((k, v) for k, v in paramlst if v)
 
         r = self._do_request(method, path, headers, params=params)
         return FcHttpResponse(r.headers, r.json())
 
-    def put_on_demand_config(self, serviceName, alias, functionName, maximumInstanceCount, headers={}):
+    def put_on_demand_config(
+        self, serviceName, alias, functionName, maximumInstanceCount, headers={}
+    ):
         """
         put on demand config
         :param service_name: name of the service.
@@ -1314,16 +1452,18 @@ class Client(object):
             "maximumInstanceCount": 10
         }
         """
-        method = 'PUT'
-        path = '/{0}/services/{1}.{2}/functions/{3}/on-demand-config'.format(
-            self.api_version, serviceName, alias, functionName)
+        method = "PUT"
+        path = "/{0}/services/{1}.{2}/functions/{3}/on-demand-config".format(
+            self.api_version, serviceName, alias, functionName
+        )
 
         headers = self._build_common_headers(method, path, headers)
         payload = {
-            'maximumInstanceCount': maximumInstanceCount,
+            "maximumInstanceCount": maximumInstanceCount,
         }
-        r = self._do_request(method, path, headers,
-                             body=json.dumps(payload).encode('utf-8'))
+        r = self._do_request(
+            method, path, headers, body=json.dumps(payload).encode("utf-8")
+        )
         return FcHttpResponse(r.headers, r.json())
 
     def get_on_demand_config(self, serviceName, alias, functionName, headers={}):
@@ -1342,9 +1482,10 @@ class Client(object):
             "maximumInstanceCount": 10
         }
         """
-        method = 'GET'
-        path = '/{0}/services/{1}.{2}/functions/{3}/on-demand-config'.format(
-            self.api_version, serviceName, alias, functionName)
+        method = "GET"
+        path = "/{0}/services/{1}.{2}/functions/{3}/on-demand-config".format(
+            self.api_version, serviceName, alias, functionName
+        )
 
         headers = self._build_common_headers(method, path, headers)
         r = self._do_request(method, path, headers)
@@ -1362,15 +1503,18 @@ class Client(object):
             2, 'if-match': string (delete the service only when matched the given etag.)
             3, user define key value
         """
-        method = 'DELETE'
-        path = '/{0}/services/{1}.{2}/functions/{3}/on-demand-config'.format(
-            self.api_version, serviceName, alias, functionName)
+        method = "DELETE"
+        path = "/{0}/services/{1}.{2}/functions/{3}/on-demand-config".format(
+            self.api_version, serviceName, alias, functionName
+        )
 
         headers = self._build_common_headers(method, path, headers)
         r = self._do_request(method, path, headers)
         return FcHttpResponse(r.headers, None)
 
-    def list_on_demand_config(self, limit=100, nextToken=None, prefix=None, startKey=None, headers={}):
+    def list_on_demand_config(
+        self, limit=100, nextToken=None, prefix=None, startKey=None, headers={}
+    ):
         """
         list on demand config
         :param limit: (optional, integer) the total number of the returned configs.
@@ -1396,18 +1540,24 @@ class Client(object):
             "nextToken": "token"
         }
         """
-        method = 'GET'
-        path = '/{0}/on-demand-configs'.format(self.api_version)
+        method = "GET"
+        path = "/{0}/on-demand-configs".format(self.api_version)
 
-        paramlst = [('limit', limit), ('prefix', prefix),
-                    ('nextToken', nextToken), ('startKey', startKey)]
+        paramlst = [
+            ("limit", limit),
+            ("prefix", prefix),
+            ("nextToken", nextToken),
+            ("startKey", startKey),
+        ]
         params = dict((k, v) for k, v in paramlst if v)
 
         headers = self._build_common_headers(method, path, headers)
         r = self._do_request(method, path, headers, params=params)
         return FcHttpResponse(r.headers, r.json())
 
-    def put_provision_config(self, serviceName, qualifier, functionName, target, headers={}):
+    def put_provision_config(
+        self, serviceName, qualifier, functionName, target, headers={}
+    ):
         """
         put provision config
         :param service_name: name of the service.
@@ -1424,16 +1574,18 @@ class Client(object):
             "target": 10
         }
         """
-        method = 'PUT'
-        path = '/{0}/services/{1}.{2}/functions/{3}/provision-config'.format(
-            self.api_version, serviceName, qualifier, functionName)
+        method = "PUT"
+        path = "/{0}/services/{1}.{2}/functions/{3}/provision-config".format(
+            self.api_version, serviceName, qualifier, functionName
+        )
 
         headers = self._build_common_headers(method, path, headers)
         payload = {
-            'target': target,
+            "target": target,
         }
-        r = self._do_request(method, path, headers,
-                             body=json.dumps(payload).encode('utf-8'))
+        r = self._do_request(
+            method, path, headers, body=json.dumps(payload).encode("utf-8")
+        )
         return FcHttpResponse(r.headers, r.json())
 
     def get_provision_config(self, serviceName, qualifier, functionName, headers={}):
@@ -1452,16 +1604,19 @@ class Client(object):
             "current": 0,
         }
         """
-        method = 'GET'
-        path = '/{0}/services/{1}.{2}/functions/{3}/provision-config'.format(
-            self.api_version, serviceName, qualifier, functionName)
+        method = "GET"
+        path = "/{0}/services/{1}.{2}/functions/{3}/provision-config".format(
+            self.api_version, serviceName, qualifier, functionName
+        )
 
         headers = self._build_common_headers(method, path, headers)
 
         r = self._do_request(method, path, headers)
         return FcHttpResponse(r.headers, r.json())
 
-    def list_provision_configs(self, serviceName, qualifier,  limit=None, nextToken=None, headers={}):
+    def list_provision_configs(
+        self, serviceName, qualifier, limit=None, nextToken=None, headers={}
+    ):
         """
         List the provision configin the current service.
         :param serviceName: (optional, string), name of the service.
@@ -1486,20 +1641,25 @@ class Client(object):
         }
         """
         if qualifier and (not serviceName):
-            raise Exception(
-                'serviceName is required when qualifier is not empty')
-        method = 'GET'
-        path = '/{0}/provision-configs'.format(self.api_version)
+            raise Exception("serviceName is required when qualifier is not empty")
+        method = "GET"
+        path = "/{0}/provision-configs".format(self.api_version)
         headers = self._build_common_headers(method, path, headers)
 
-        paramlst = [('serviceName', serviceName), ('qualifier', qualifier),
-                    ('limit', limit), ('nextToken', nextToken)]
+        paramlst = [
+            ("serviceName", serviceName),
+            ("qualifier", qualifier),
+            ("limit", limit),
+            ("nextToken", nextToken),
+        ]
         params = dict((k, v) for k, v in paramlst if v)
 
         r = self._do_request(method, path, headers, params=params)
         return FcHttpResponse(r.headers, r.json())
 
-    def put_function_async_invoke_config(self, serviceName, qualifier, functionName, asyncConfig, headers={}):
+    def put_function_async_invoke_config(
+        self, serviceName, qualifier, functionName, asyncConfig, headers={}
+    ):
         """
         put function async invoke config
         :param serviceName: name of the service.
@@ -1521,17 +1681,21 @@ class Client(object):
             "lastModifiedTime": ""
         }
         """
-        method = 'PUT'
-        path = '/{0}/services/{1}.{2}/functions/{3}/async-invoke-config'.format(
-            self.api_version, serviceName, qualifier, functionName)
+        method = "PUT"
+        path = "/{0}/services/{1}.{2}/functions/{3}/async-invoke-config".format(
+            self.api_version, serviceName, qualifier, functionName
+        )
 
         headers = self._build_common_headers(method, path, headers)
         payload = asyncConfig
-        r = self._do_request(method, path, headers,
-                             body=json.dumps(payload).encode('utf-8'))
+        r = self._do_request(
+            method, path, headers, body=json.dumps(payload).encode("utf-8")
+        )
         return FcHttpResponse(r.headers, r.json())
 
-    def get_function_async_invoke_config(self, serviceName, qualifier, functionName, headers={}):
+    def get_function_async_invoke_config(
+        self, serviceName, qualifier, functionName, headers={}
+    ):
         """
         get function async invoke config
         :param serviceName: name of the service.
@@ -1552,16 +1716,19 @@ class Client(object):
             "lastModifiedTime": ""
         }
         """
-        method = 'GET'
-        path = '/{0}/services/{1}.{2}/functions/{3}/async-invoke-config'.format(
-            self.api_version, serviceName, qualifier, functionName)
+        method = "GET"
+        path = "/{0}/services/{1}.{2}/functions/{3}/async-invoke-config".format(
+            self.api_version, serviceName, qualifier, functionName
+        )
 
         headers = self._build_common_headers(method, path, headers)
 
         r = self._do_request(method, path, headers)
         return FcHttpResponse(r.headers, r.json())
 
-    def list_function_async_invoke_configs(self, serviceName, functionName, limit=None, nextToken=None, headers={}):
+    def list_function_async_invoke_configs(
+        self, serviceName, functionName, limit=None, nextToken=None, headers={}
+    ):
         """
         List the async configs for the current service and function.
         :param serviceName: (optional, string), name of the service.
@@ -1598,18 +1765,21 @@ class Client(object):
             "nextToken": ""
         }
         """
-        method = 'GET'
-        path = '/{0}/services/{1}/functions/{2}/async-invoke-configs'.format(
-            self.api_version, serviceName, functionName)
+        method = "GET"
+        path = "/{0}/services/{1}/functions/{2}/async-invoke-configs".format(
+            self.api_version, serviceName, functionName
+        )
         headers = self._build_common_headers(method, path, headers)
 
-        paramlst = [('limit', limit), ('nextToken', nextToken)]
+        paramlst = [("limit", limit), ("nextToken", nextToken)]
         params = dict((k, v) for k, v in paramlst if v)
 
         r = self._do_request(method, path, headers, params=params)
         return FcHttpResponse(r.headers, r.json())
 
-    def delete_function_async_invoke_config(self, serviceName, qualifier, functionName, headers={}):
+    def delete_function_async_invoke_config(
+        self, serviceName, qualifier, functionName, headers={}
+    ):
         """
         delete function async invoke config
         :param serviceName: name of the service.
@@ -1619,50 +1789,63 @@ class Client(object):
             1, 'x-fc-trace-id': string (a uuid to do the request tracing)
             2, user define key value
         """
-        method = 'DELETE'
-        path = '/{0}/services/{1}.{2}/functions/{3}/async-invoke-config'.format(
-            self.api_version, serviceName, qualifier, functionName)
+        method = "DELETE"
+        path = "/{0}/services/{1}.{2}/functions/{3}/async-invoke-config".format(
+            self.api_version, serviceName, qualifier, functionName
+        )
 
         headers = self._build_common_headers(method, path, headers)
 
         self._do_request(method, path, headers)
 
-    def list_instances(self, serviceName, qualifier, functionName, params={}, headers={}):
+    def list_instances(
+        self, serviceName, qualifier, functionName, params={}, headers={}
+    ):
         """
         list instances
         :param serviceName: name of the service.
         :param qualifier: name of the service's alias.
         :param functionName: name of the funtion.
-        :param params: 
+        :param params:
             limit: limit the number of instances returned
             instanceIds: limit to return specified instances
         :param headers, optional
             1, 'x-fc-trace-id': string (a uuid to do the request tracing)
             2, user define key value
         """
-        method = 'GET'
-        path = '/{0}/services/{1}.{2}/functions/{3}/instances'.format(
-            self.api_version, serviceName, qualifier, functionName)
+        method = "GET"
+        path = "/{0}/services/{1}.{2}/functions/{3}/instances".format(
+            self.api_version, serviceName, qualifier, functionName
+        )
 
         headers = self._build_common_headers(method, path, headers)
 
         r = self._do_request(method, path, headers, params)
         return FcHttpResponse(r.headers, r.json())
-    
-    def instance_exec(self, serviceName, qualifier, functionName, instance_id, params={}, hooks={}, headers={}):
+
+    def instance_exec(
+        self,
+        serviceName,
+        qualifier,
+        functionName,
+        instance_id,
+        params={},
+        hooks={},
+        headers={},
+    ):
         """
         Execute the command within the instance
         :param serviceName: name of the service.
         :param qualifier: name of the service's alias.
         :param functionName: name of the funtion.
-        :param instance_id: name of the instance 
+        :param instance_id: name of the instance
         :param params
             command: initial command
             stdin: enable stdin
             stdout: enable stdout
             stderr: enable stderr
             tty: enable tty
-            idleTimeout: no operation disconnect time 
+            idleTimeout: no operation disconnect time
         :param hooks
             on_open: callback on opened
             on_stdout: callback on got stdout
@@ -1673,25 +1856,35 @@ class Client(object):
             1, 'x-fc-trace-id': string (a uuid to do the request tracing)
             2, user define key value
         """
-        url = '/{0}/services/{1}.{2}/functions/{3}/instances/{4}/exec'.format(
+        url = "/{0}/services/{1}.{2}/functions/{3}/instances/{4}/exec".format(
             self.api_version,
-            serviceName, qualifier,
-            functionName, instance_id,
+            serviceName,
+            qualifier,
+            functionName,
+            instance_id,
         )
 
         ws = self.websocket(url, params)
         return ExecWebsocket(
             ws,
-            on_open=hooks.get('on_open'),
-            on_stdout=hooks.get('on_stdout'),
-            on_stderr=hooks.get('on_stderr'),
-            on_error=hooks.get('on_error'),
-            on_close=hooks.get('on_close'),
+            on_open=hooks.get("on_open"),
+            on_stdout=hooks.get("on_stdout"),
+            on_stderr=hooks.get("on_stderr"),
+            on_error=hooks.get("on_error"),
+            on_close=hooks.get("on_close"),
         )
 
 
 class ExecWebsocket(object):
-    def __init__(self, ws: websocket.WebSocketApp, on_open=None, on_stdout=None, on_stderr=None, on_error=None, on_close=None):
+    def __init__(
+        self,
+        ws: websocket.WebSocketApp,
+        on_open=None,
+        on_stdout=None,
+        on_stderr=None,
+        on_error=None,
+        on_close=None,
+    ):
         self.ws = ws
         self.on_open = on_open
         self.on_error = on_error
@@ -1721,7 +1914,7 @@ class ExecWebsocket(object):
             error = "Server error: %s" % message
             self.__on_error(ws, error)
         else:
-            error = Exception('unknown message type: %s' % message_type)
+            error = Exception("unknown message type: %s" % message_type)
             if self.on_error != None:
                 self.on_error(self, error)
 
