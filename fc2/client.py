@@ -9,9 +9,9 @@ import json
 import logging
 import platform
 import sys
-import websocket
 from urllib.parse import quote
 import threading
+import websocket
 
 import requests
 
@@ -217,48 +217,11 @@ class Client(object):
         r = self._do_request(method, path, headers)
         return FcHttpResponse(r.headers, r.json())
 
-    def create_service(self, serviceName, description=None, logConfig=None, role=None, headers={}, internetAccess=None,
-                       vpcConfig=None, nasConfig=None, tracingConfig=None):
+    def create_service(self, payload, headers={}):
         """
         Create a service.
         :param serviceName: name of the service.
-        :param description: (optional, string), detail description of the service.
-        :param logConfig: (optional, dict), log configuration.
-        {
-            'project': 'string',
-            'logStore': 'string',
-            'enableRequestMetrics' : 'bool',
-            'enableInstanceMetrics' : 'bool'
-        }
-        :param role: The Aliyun Resource Name (ARN) of the RAM role that FunctionCompute assumes when it executes
-        your function to access any other Aliyun resources.
-        For more information, see: https://help.aliyun.com/document_detail/52885.html
-        :param headers, oprional, 'x-fc-trace-id': string (a uuid to do the request tracing), etc
-        :param internetAccess, optional, the ability to access the internet, default true, you can set it false if you would like to disable the internet access
-        :param vpcConfig, (optional, dict), vpc configuration
-        {
-            "vpcId": "string",
-            "vSwitchIds": [ "string" ],
-            "securityGroupId": "string"
-        }
-        :param nasConfig, (optional, dict), nas configuration
-        {
-            "userId": int,
-            "groupId": int,
-            "mountPoints": [
-                {
-                    "serverAddr" : string,
-                    "mountDir" : string
-                }
-             ],
-        }
-        :param tracingConfig, (optional, dict), tracing configuration
-        {
-            "type": string, Supported: Jaeger.
-            "params": dict,
-         }
-        :param traceId:(optional, string) a uuid to do the request tracing.
-        :return: FcHttpResponse
+        payload: dict
         headers: dict {'etag':'string', ...}
         data: dict. For more information, see: https://help.aliyun.com/document_detail/52877.html#createservice
         {
@@ -279,21 +242,6 @@ class Client(object):
         method = 'POST'
         path = '/{0}/services'.format(self.api_version)
         headers = self._build_common_headers(method, path, headers)
-
-        payload = {'serviceName': serviceName, 'description': description}
-        if logConfig:
-            payload['logConfig'] = logConfig
-        if role:
-            payload['role'] = role
-        if vpcConfig:
-            payload['vpcConfig'] = vpcConfig
-        if internetAccess != None:
-            payload['internetAccess'] = internetAccess
-        if nasConfig:
-            payload['nasConfig'] = nasConfig
-        if tracingConfig:
-            payload['tracingConfig'] = tracingConfig
-
         r = self._do_request(method, path, headers,
                              body=json.dumps(payload).encode('utf-8'))
         # 'etag' now in headers
@@ -315,52 +263,14 @@ class Client(object):
 
         self._do_request(method, path, headers)
 
-    def update_service(self, serviceName, description=None, logConfig=None, role=None, headers={}, internetAccess=None,
-                       vpcConfig=None, nasConfig=None, tracingConfig=None):
+    def update_service(self, serviceName, payload, headers={}):
         """
         Update the service attributes.
         :param serviceName: name of the service.
-        :param description: (optional, string), detail description of the service.
-        :param logConfig: (optional, dict), log configuration.
-        {
-            'project': 'string',
-            'logStore': 'string',
-            'enableRequestMetrics': 'bool',
-            'enableInstanceMetrics': 'bool'
-        }
-        :param role: The Aliyun Resource Name (ARN) of the RAM role that FunctionCompute assumes when it executes
-        your function to access any other Aliyun resources.
-        For more information, see: https://help.aliyun.com/document_detail/52885.html
-        :param headers, optional
-            1, 'x-fc-trace-id': string (a uuid to do the request tracing)
-            2, 'if-match': string (update the service only when matched the given etag.)
-            3, user define key value
-        :param internetAccess, optional, the ability to access the internet, default true, you can set it false if you would like to disable the internet access
-        :param vpcConfig, (optional, dict), vpc configuration
-        {
-            "vpcId": "string",
-            "vSwitchIds": [ "string" ],
-            "securityGroupId": "string"
-        }
-        :param nasConfig, (optional, dict), nas configuration
-        {
-            "userId": int,
-            "groupId": int,
-            "mountPoints": [
-                {
-                    "serverAddr" : string,
-                    "mountDir" : string
-                }
-             ],
-        }
-        :param tracingConfig, (optional, dict), tracing configuration
-        {
-            "type": string, Supported: Jaeger.
-            "params": dict,
-         }
+        :param payload: dict
         :return: FcHttpResponse
         headers: dict {'etag':'string', ...}
-        data:dict. For more information, see: https://help.aliyun.com/document_detail/52877.html#createservice
+        data:dict. For more information
         {
             'createdTime': 'string',
             'description': 'string',
@@ -380,28 +290,12 @@ class Client(object):
         path = '/{0}/services/{1}'.format(self.api_version, serviceName)
         headers = self._build_common_headers(method, path, headers)
 
-        payload = {}
-        if description:
-            payload['description'] = description
-        if logConfig:
-            payload['logConfig'] = logConfig
-        if role:
-            payload['role'] = role
-        if internetAccess is not None:
-            payload['internetAccess'] = internetAccess
-        if vpcConfig:
-            payload['vpcConfig'] = vpcConfig
-        if nasConfig:
-            payload['nasConfig'] = nasConfig
-        if tracingConfig is not None:
-            payload['tracingConfig'] = tracingConfig
-
         r = self._do_request(method, path, headers,
                              body=json.dumps(payload).encode('utf-8'))
         # 'etag' now in headers
         return FcHttpResponse(r.headers, r.json())
 
-    def get_service(self, serviceName, headers={}, qualifier=None):
+    def get_service(self, serviceName, qualifier=None, headers={}):
         """
         Get the service configuration.
         :param serviceName: (string) name of the service.
@@ -472,51 +366,11 @@ class Client(object):
         r = self._do_request(method, path, headers, params=params)
         return FcHttpResponse(r.headers, r.json())
 
-    def _check_function_param_valid(self, codeZipFile, codeDir, codeOSSBucket, codeOSSObject):
-        code_d = {}
-        if codeZipFile:
-            code_d['codeZipFile'] = codeZipFile
-        if codeDir:
-            code_d['codeDir'] = codeDir
-        if codeOSSBucket:
-            if not codeOSSObject:
-                raise Exception(
-                    'codeOSSBucket and codeOSSObject must to exist at the same time')
-            code_d['oss'] = (codeOSSBucket, codeOSSObject)
-
-        if len(code_d) == 0:
-            raise Exception(
-                'codeZipFile, codeDir, (codeOSSBucket, codeOSSObject) , these three parameters must have an assignment')
-
-        if len(code_d) > 1:
-            raise Exception(
-                'codeZipFile, codeDir, (codeOSSBucket, codeOSSObject) , these three parameters need only one paramet$er assignment')
-
-        return True
-
-    def create_function(
-            self, serviceName, functionName, runtime, handler,
-            initializer=None, initializationTimeout=30,
-            codeZipFile=None, codeDir=None, codeOSSBucket=None, codeOSSObject=None,
-            description=None, memorySize=256, timeout=60, headers={}, environmentVariables=None,
-            instanceConcurrency=None, customContainerConfig=None, caPort=None, instanceType=None):
+    def create_function(self, serviceName, payload, headers={}):
         """
         Create a function.
         :param serviceName: (required, string) the name of the service that the function belongs to.
-        :param functionName: (required, string) the name of the function.
-        :param runtime: (required, string) the runtime type. For example, nodejs4.4, python2.7 and etc.
-        :param handler: (required, string) the entry point of the function.
-        :param initializer: (required, string) the entry point of the initializer.
-        :param codeZipFile: (optional, string) the file path of the zipped code.
-        :param codeDir: (optional, string) the directory of the code.
-        :param codeOSSBucket: (optional, string) the oss bucket where the code located in.
-        :param codeOSSObject: (optional, string) the zipped code stored as a OSS object.
-        :param description: (optional, string) the readable description of the function.
-        :param memorySize: (optional, integer) the memory size of the function, in MB.
-        :param timeout: (optional, integer) the max execution time of the function, in second.
-        :param initializationTimeout: (optional, integer) the max execution time of the initializer, in second.
-        :param environmentVariables: (optional, dict) the environment variables of the function, both key and value are string type.
-        :param instanceConcurrency: (optional, integer) the instance concurrency of the function
+        :param payload
         :param headers, optional
             1, 'x-fc-trace-id': string (a uuid to do the request tracing)
             2, user define key value
@@ -539,110 +393,21 @@ class Client(object):
             'initializationTimeout': 30   // in second
         }
         """
-        serviceName, functionName, runtime, handler, memorySize, timeout = \
-            str(serviceName), str(functionName), str(runtime), str(
-                handler), int(memorySize), int(timeout)
-
-        initializer = str(initializer) if initializer else initializer
-        initializationTimeout = int(
-            initializationTimeout) if initializationTimeout else initializationTimeout
-        instanceType = str(instanceType) if instanceType else instanceType
-
         method = 'POST'
         path = '/{0}/services/{1}/functions'.format(
             self.api_version, serviceName)
         headers = self._build_common_headers(method, path, headers)
-
-        payload = {'functionName': functionName,
-                   'runtime': runtime, 'handler': handler}
-
-        if runtime != "custom-container":
-            codeZipFile = str(codeZipFile) if codeZipFile else codeZipFile
-            codeDir = str(codeDir) if codeDir else codeDir
-            codeOSSBucket = str(
-                codeOSSBucket) if codeOSSBucket else codeOSSBucket
-            codeOSSObject = str(
-                codeOSSObject) if codeOSSObject else codeOSSObject
-            self._check_function_param_valid(
-                codeZipFile, codeDir, codeOSSBucket, codeOSSObject)
-
-            if codeZipFile:
-                # codeZipFile has highest priority.
-                file = open(codeZipFile, 'rb')
-                data = file.read()
-                encoded = base64.b64encode(data).decode('utf-8')
-                payload['code'] = {'zipFile': encoded}
-            elif codeDir:
-                bytesIO = io.BytesIO()
-                util.zip_dir(codeDir, bytesIO)
-                encoded = base64.b64encode(bytesIO.getvalue()).decode('utf-8')
-                payload['code'] = {'zipFile': encoded}
-            else:
-                payload['code'] = {'ossBucketName': codeOSSBucket,
-                                   'ossObjectName': codeOSSObject}
-        else:
-            if not customContainerConfig:
-                raise Exception(
-                    'customContainerConfig is required if runtime is custom-container')
-
-            payload['customContainerConfig'] = customContainerConfig
-
-        if runtime in ["custom", "custom-container"] and caPort:
-            payload['caPort'] = caPort
-
-        if description:
-            payload['description'] = description
-
-        if memorySize:
-            payload['memorySize'] = memorySize
-
-        if initializer:
-            payload['initializer'] = initializer
-
-        if timeout:
-            payload['timeout'] = timeout
-
-        if initializationTimeout:
-            payload['initializationTimeout'] = initializationTimeout
-
-        if environmentVariables != None:
-            payload['environmentVariables'] = environmentVariables
-
-        if instanceConcurrency != None:
-            payload['instanceConcurrency'] = instanceConcurrency
-
-        if instanceType:
-            payload['instanceType'] = instanceType
-
         r = self._do_request(method, path, headers,
                              body=json.dumps(payload).encode('utf-8'))
         # 'etag' now in headers
         return FcHttpResponse(r.headers, r.json())
 
-    def update_function(
-            self, serviceName, functionName,
-            initializer=None, initializationTimeout=None,
-            codeZipFile=None, codeDir=None, codeOSSBucket=None, codeOSSObject=None,
-            description=None, handler=None, memorySize=None, runtime=None, timeout=None,
-            headers={}, environmentVariables=None, instanceConcurrency=None, customContainerConfig=None, caPort=None, instanceType=None):
+    def update_function(self, serviceName, functionName, payload, headers={}):
         """
         Update the function.
         :param serviceName: (required, string) the name of the service that the function belongs to.
         :param functionName: (required, string) the name of the function.
-        :param runtime: (required, string) the runtime type. For example, nodejs4.4, python2.7 and etc.
-        :param handler: (required, string) the entry point of the function.
-        :param initializer: (required, string) the entry point of the initializer.
-        :param codeZipFile: (optional, string) the file path of the zipped code.
-        :param codeDir: (optional, string) the directory of the code.
-        :param codeOSSBucket: (optional, string) the oss bucket where the code located in.
-        :param codeOSSObject: (optional, string) the zipped code stored as a OSS object.
-        :param description: (optional, string) the readable description of the function.
-        :param memorySize: (optional, integer) the memory size of the function, in MB.
-        :param timeout: (optional, integer) the max execution time of the function, in second.
-        :param initializationTimeout: (optional, integer) the max execution time of the initializer, in second.
-        :param etag: (optional, string) delete the service only when matched the given etag.
-        :param environmentVariables: (optional, dict) the environment variables of the function, both key and value are string type.
-        :param instanceConcurrency: (optional, integer) the instance concurrency of the function
+        :param payload
         :param headers, optional
             1, 'x-fc-trace-id': string (a uuid to do the request tracing)
             2, 'if-match': string (update the function only when matched the given etag.)
@@ -666,77 +431,10 @@ class Client(object):
             'initializationTimeout': 30,  // in second
         }
         """
-        serviceName, functionName = str(serviceName), str(functionName)
-        handler = str(handler) if handler else handler
-        initializer = str(initializer) if initializer else initializer
-        instanceType = str(instanceType) if instanceType else instanceType
-        runtime = str(runtime) if runtime else runtime
-        memorySize = int(memorySize) if memorySize else memorySize
-        timeout = int(timeout) if timeout else timeout
-        initializationTimeout = int(
-            initializationTimeout) if initializationTimeout else initializationTimeout
-        codeZipFile = str(codeZipFile) if codeZipFile else codeZipFile
-        codeDir = str(codeDir) if codeDir else codeDir
-        codeOSSBucket = str(codeOSSBucket) if codeOSSBucket else codeOSSBucket
-        codeOSSObject = str(codeOSSObject) if codeOSSObject else codeOSSObject
-
         method = 'PUT'
         path = '/{0}/services/{1}/functions/{2}'.format(
             self.api_version, serviceName, functionName)
         headers = self._build_common_headers(method, path, headers)
-
-        payload = {}
-        if runtime:
-            payload['runtime'] = runtime
-
-        if handler:
-            payload['handler'] = handler
-
-        if initializer:
-            payload['initializer'] = initializer
-
-        if codeZipFile:
-            # codeZipFile has highest priority.
-            file = open(codeZipFile, 'rb')
-            data = file.read()
-            encoded = base64.b64encode(data).decode('utf-8')
-            payload['code'] = {'zipFile': encoded}
-        elif codeDir:
-            bytesIO = io.BytesIO()
-            util.zip_dir(codeDir, bytesIO)
-            encoded = base64.b64encode(bytesIO.getvalue()).decode('utf-8')
-            payload['code'] = {'zipFile': encoded}
-        elif codeOSSBucket and codeOSSObject:
-            payload['code'] = {'ossBucketName': codeOSSBucket,
-                               'ossObjectName': codeOSSObject}
-
-        if customContainerConfig:
-            payload['customContainerConfig'] = customContainerConfig
-
-        if ((runtime and runtime in ["custom", "custom-container"]) or (not runtime)) and caPort:
-            payload['caPort'] = caPort
-
-        if description:
-            payload['description'] = description
-
-        if memorySize:
-            payload['memorySize'] = memorySize
-
-        if timeout:
-            payload['timeout'] = timeout
-
-        if initializationTimeout:
-            payload['initializationTimeout'] = initializationTimeout
-
-        if environmentVariables != None:
-            payload['environmentVariables'] = environmentVariables
-
-        if instanceConcurrency != None:
-            payload['instanceConcurrency'] = instanceConcurrency
-
-        if instanceType:
-            payload['instanceType'] = instanceType
-
         r = self._do_request(method, path, headers,
                              body=json.dumps(payload).encode('utf-8'))
         # 'etag' now in headers
@@ -760,7 +458,7 @@ class Client(object):
 
         self._do_request(method, path, headers)
 
-    def get_function(self, serviceName, functionName, headers={}, qualifier=None):
+    def get_function(self, serviceName, functionName, qualifier=None, headers={}):
         """
         Get the function configuration.
         :param serviceName: (required, string) name of the service.
@@ -784,7 +482,7 @@ class Client(object):
         # 'etag' now in headers
         return FcHttpResponse(r.headers, r.json())
 
-    def get_function_code(self, serviceName, functionName, headers={}, qualifier=None):
+    def get_function_code(self, serviceName, functionName, qualifier=None, headers={}):
         """
         Get the function code.
         :param serviceName: (required, string) name of the service.
@@ -811,7 +509,7 @@ class Client(object):
         r = self._do_request(method, path, headers)
         return FcHttpResponse(r.headers, r.json())
 
-    def list_functions(self, serviceName, limit=None, nextToken=None, prefix=None, startKey=None, headers={}, qualifier=None):
+    def list_functions(self, serviceName, limit=None, nextToken=None, prefix=None, startKey=None, qualifier=None, headers={}):
         """
         List the functions of the specified service.
         :param limit: (optional, integer) the total number of the returned services.
@@ -862,7 +560,7 @@ class Client(object):
         r = self._do_request(method, path, headers, params=params)
         return FcHttpResponse(r.headers, r.json())
 
-    def invoke_function(self, serviceName, functionName, payload=None, headers={}, qualifier=None):
+    def invoke_function(self, serviceName, functionName, payload=None, qualifier=None, headers={}):
         """
         Invoke the function synchronously or asynchronously., default is synchronously.
         :param serviceName: (required, string) the name of the service.
@@ -899,20 +597,12 @@ class Client(object):
 
         return FcHttpResponse(r.headers, r.content)
 
-    def create_trigger(self, serviceName, functionName, triggerName, triggerType, triggerConfig, sourceArn,
-                       invocationRole, headers={}, qualifier=None, description=''):
+    def create_trigger(self, serviceName, functionName, payload, headers={}):
         """
         Create a trigger.
         :param serviceName: (required, string), name of the service that the trigger belongs to.
         :param functionName: (required, string), name of the function that the trigger belongs to.
-        :param triggerName: (required, string), name of the trigger.
-        :param description: (optional, string), description of trigger.
-        :param triggerType: (required, string), the type of trigger. 'oss','log','timer'
-        :param triggerConfig: (required, dict), the config of the trigger, different types of trigger has different config.
-        :param sourceArn: (optional, string), Aliyun Resource Name（ARN）of the event.In addition to timetrigger, other trigger parameters are required
-        :param invocationRole: (optional, string), the role that event source uses to invoke the function.In addition to timetrigger, other trigger parameters are required.
-        :param qualifier: (optional, string) qualifier of service.
-
+        :param payload dict
         :param headers, optional
             1, 'x-fc-trace-id': string (a uuid to do the request tracing)
             2, user define key value
@@ -933,8 +623,6 @@ class Client(object):
         path = '/{0}/services/{1}/functions/{2}/triggers'.format(
             self.api_version, serviceName, functionName)
         headers = self._build_common_headers(method, path, headers)
-        payload = {'triggerName': triggerName, 'description': description, 'triggerType': triggerType, 'triggerConfig': triggerConfig,
-                   'sourceArn': sourceArn, 'invocationRole': invocationRole, 'qualifier': qualifier}
         r = self._do_request(method, path, headers,
                              body=json.dumps(payload).encode('utf-8'))
         return FcHttpResponse(r.headers, r.json())
@@ -957,17 +645,13 @@ class Client(object):
         headers = self._build_common_headers(method, path, headers)
         self._do_request(method, path, headers)
 
-    def update_trigger(self, serviceName, functionName, triggerName, triggerConfig=None, invocationRole=None,
-                       headers={}, qualifier=None, description=None):
+    def update_trigger(self, serviceName, functionName, triggerName, payload, headers={}):
         """
         Update a trigger.
         :param serviceName: (required, string), name of the service that the trigger belongs to.
         :param functionName: (required, string), name of the function that the trigger belongs to.
         :param triggerName: (required, string), name of the trigger.
-        :param description: (optional, string), description of trigger.
-        :param triggerConfig: (optional, dict), the config of the trigger, different types of trigger has different config.
-        :param invocationRole: (optional, string), the role that event source uses to invoke the function.
-        :param qualifier: (optional, string) qualifier of service.
+        :param payload: dict
 
         :param headers, optional
             1, 'x-fc-trace-id': string (a uuid to do the request tracing)
@@ -990,15 +674,6 @@ class Client(object):
         path = '/{0}/services/{1}/functions/{2}/triggers/{3}'.format(self.api_version, serviceName, functionName,
                                                                      triggerName)
         headers = self._build_common_headers(method, path, headers)
-        payload = {}
-        if description:
-            payload['description'] = description
-        if triggerConfig:
-            payload['triggerConfig'] = triggerConfig
-        if invocationRole:
-            payload['invocationRole'] = invocationRole
-        if qualifier:
-            payload['qualifier'] = qualifier
         r = self._do_request(method, path, headers,
                              body=json.dumps(payload).encode('utf-8'))
         return FcHttpResponse(r.headers, r.json())
@@ -1973,7 +1648,7 @@ class Client(object):
 
         r = self._do_request(method, path, headers, params)
         return FcHttpResponse(r.headers, r.json())
-
+    
     def instance_exec(self, serviceName, qualifier, functionName, instance_id, params={}, hooks={}, headers={}):
         """
         Execute the command within the instance
